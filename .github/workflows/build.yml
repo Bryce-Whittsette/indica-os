@@ -1,0 +1,13 @@
+name: Simulator build
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Arithmetic regression checks
+        run: swiftc IndicaOS/CalculatorEngine.swift Tests/CalculatorTests.swift -o /tmp/calculator-tests && /tmp/calculator-tests
+      - name: Build without signing
+        run: xcodebuild -project IndicaOS.xcodeproj -scheme IndicaOS -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
