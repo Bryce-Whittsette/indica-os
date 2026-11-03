@@ -26,10 +26,7 @@ struct SystemShell: View {
                 guard !didStart else { return }
                 didStart = true
                 guard system.phase == .booting else { return }
-                Task {
-                    try? await Task.sleep(for: .seconds(1.25))
-                    system.finishBoot()
-                }
+                system.finishBoot()
             }
         }
         .statusBarHidden(true)
@@ -246,9 +243,11 @@ extension EnvironmentValues {
 
 /// Occupies the device's top safe-area region. The camera housing (notch or
 /// Dynamic Island) is physical, so the bar leaves its centre empty rather than
-/// drawing a second one.
+/// drawing a second one. Network and battery come from `DeviceStatus`; values
+/// the system doesn't provide are left out rather than invented.
 struct SystemStatusBar: View {
     @Environment(\.shellSafeAreaInsets) private var safeAreaInsets
+    @ObservedObject private var device = DeviceStatus.shared
     var foreground: Color = .white
 
     var body: some View {
@@ -262,11 +261,16 @@ struct SystemStatusBar: View {
             Spacer()
 
             HStack(spacing: 5) {
-                Image(systemName: "cellularbars")
-                Image(systemName: "wifi")
-                Image(systemName: "battery.100percent")
+                if let symbol = device.network.symbol {
+                    Image(systemName: symbol)
+                }
+                if let symbol = device.batterySymbol {
+                    Image(systemName: symbol)
+                }
             }
             .font(.system(size: 12, weight: .semibold))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(device.accessibilitySummary)
         }
         .foregroundStyle(foreground)
         .padding(.horizontal, 22)
@@ -1249,7 +1253,7 @@ private struct AppSwitcher: View {
 
             Spacer()
 
-            Text("Swipe up on a card to close")
+            Text("Tap a card to open it. Tap × to close it.")
                 .font(.system(size: 11, weight: .semibold, design: .default))
                 .foregroundStyle(system.wallpaper.foreground.opacity(0.65))
 

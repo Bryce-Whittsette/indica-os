@@ -207,7 +207,7 @@ struct IndicaSettingsApp: View {
         case .display: system.appearance.rawValue
         case .wallpaper: system.wallpaper.rawValue
         case .glass: "\(Int(system.glassIntensity * 100))%"
-        case .battery: system.lowPowerMode ? "Low Power Mode" : "82%"
+        case .battery: system.lowPowerMode ? "Low Power Mode" : (DeviceStatus.shared.batteryPercentText ?? "Unavailable")
         case .connections: "\(connections.connectedCount) ready"
         default: route.detail
         }
@@ -1084,10 +1084,12 @@ private struct BatterySettingsView: View {
                 }
             }
 
-            Section("Battery Health") {
-                LabeledContent("Maximum Capacity", value: "98%")
-                LabeledContent("Cycle Count", value: "112")
-                LabeledContent("Charging Optimization", value: "On")
+            Section {
+                LabeledContent("Current Level", value: DeviceStatus.shared.batteryPercentText ?? "Unavailable")
+            } header: {
+                Text("Battery Health")
+            } footer: {
+                Text("iOS doesn’t share maximum capacity, cycle count, or charging settings with apps. Check them in the Settings app under Battery.")
             }
         }
         .navigationTitle("Battery")

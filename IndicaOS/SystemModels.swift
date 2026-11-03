@@ -1,3 +1,4 @@
+import Network
 import SwiftUI
 
 enum SystemPhase: Equatable {
@@ -957,6 +958,104 @@ enum SampleContent {
         ("Yep, testing Indica OS now.", true),
         ("Fresh start ✨", false)
     ]
+}
+
+/// Real device facts from public APIs: battery from `UIDevice` monitoring and
+/// the active network interface from `NWPathMonitor`. Signal strength, carrier
+/// and Wi-Fi name are not available to apps, so they are never shown.
+@MainActor
+final class DeviceStatus: ObservableObject {
+    enum Network: Equatable {
+        case unknown, wifi, cellular, wired, other, offline
+
+        var symbol: String? {
+            switch self {
+            case .wifi: "wifi"
+            case .cellular: "antenna.radiowaves.left.and.right"
+            case .wired: "cable.connector"
+            case .offline: "wifi.slash"
+            case .unknown, .other: nil
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .wifi: "Wi-Fi"
+            case .cellular: "Cellular data"
+            case .wired: "Wired network"
+            case .other: "Connected"
+            case .offline: "No network connection"
+            case .unknown: "Network status unknown"
+            }
+        }
+    }
+
+    static let shared = DeviceStatus()
+
+    @Published private(set) var network: Network = .unknown
+    /// 0...1, or nil when the system reports no battery reading (for example in Simulator).
+    @Published private(set) var batteryLevel: Double?
+    @Published private(set) var batteryState: UIDevice.BatteryState = .unknown
+
+    private let monitor = NWPathMonitor()
+
+    private init() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        readBattery()
+        for name in [UIDevice.batteryLevelDidChangeNotification, UIDevice.batteryStateDidChangeNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.readBattery() }
+            }
+        }
+        monitor.pathUpdateHandler = { [weak self] path in
+            let network: Network
+            if path.status != .satisfied {
+                network = .offline
+            } else if path.usesInterfaceType(.wifi) {
+                network = .wifi
+            } else if path.usesInterfaceType(.cellular) {
+                network = .cellular
+            } else if path.usesInterfaceType(.wiredEthernet) {
+                network = .wired
+            } else {
+                network = .other
+            }
+            Task { @MainActor in self?.network = network }
+        }
+        monitor.start(queue: DispatchQueue(label: "IndicaOS.DeviceStatus.network", qos: .utility))
+    }
+
+    private func readBattery() {
+        let level = UIDevice.current.batteryLevel
+        batteryLevel = level < 0 ? nil : Double(level)
+        batteryState = UIDevice.current.batteryState
+    }
+
+    var batteryPercentText: String? {
+        batteryLevel.map { "\(Int(($0 * 100).rounded()))%" }
+    }
+
+    var batterySymbol: String? {
+        guard let batteryLevel else { return nil }
+        if batteryState == .charging || batteryState == .full { return "battery.100percent.bolt" }
+        switch batteryLevel {
+        case ..<0.13: return "battery.0percent"
+        case ..<0.38: return "battery.25percent"
+        case ..<0.63: return "battery.50percent"
+        case ..<0.88: return "battery.75percent"
+        default: return "battery.100percent"
+        }
+    }
+
+    var accessibilitySummary: String {
+        var parts = [network.description]
+        if let batteryPercentText {
+            parts.append("Battery \(batteryPercentText)" + (batteryState == .charging ? ", charging" : ""))
+        } else {
+            parts.append("Battery level unavailable")
+        }
+        return parts.joined(separator: ", ")
+    }
 }
 
 /// Stores Canvas drawings as a JSON file in Application Support. Encoding and
