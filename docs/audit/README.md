@@ -18,6 +18,24 @@ Detail files:
 
 Evidence labels used here: **observed** (seen in the running simulator build), **source** (confirmed by reading code, with `file:line` in the detail files), **unverified** (needs runtime or hardware confirmation).
 
+## Milestone log
+
+### M1 — P0 data safety and camera cutout (branch `swift-ui/foundations`)
+
+Verified on the iPhone 18 Pro simulator (iOS 27.2) with a Debug build, plus the iPhone 17e simulator for the cutout and keyboard checks. The build had no Swift warnings, and the 13 calculator checks passed. Nothing has been tested on a physical device.
+
+| P0 | Status | Change | Evidence |
+|---|---|---|---|
+| Demo reset erases personal content | **Fixed** | Notes, reminders, messages and journal entries carry `isSample`. Records saved before the flag decode as personal. A one-time migration (`sampleFlagsVersion`) flags old records only when their text (and sender, for messages) exactly matches text the app shipped. "Remove Sample Content" deletes only flagged items plus the simulated camera count. Editing a note makes it personal. Samples have fixed IDs. The Settings footer and dialog describe exactly this. | An existing install migrated correctly: the welcome note was flagged as a sample and the user note "Audit note 1103" was kept as personal. After Settings → General → Transfer or Reset Indica → Remove Sample Content, only the personal note, the personal journal entry and both strokes remained, and that held after relaunch. |
+| Unreadable stored data overwritten (found during M1) | **Fixed** | Unreadable data is copied to `<key>.unreadable.<timestamp>` before the fallback loads. Identical bytes are copied only once. | Corrupting `notes` produced one backup with the original bytes. Corrupting `reminders` and launching twice still left exactly one backup. |
+| Journal and Canvas lost on exit | **Fixed** | Journal entries live in the shared store with real creation dates (the hard-coded "July 17, 2026" is gone). Canvas strokes keep their own ink, are thinned to 2 pt spacing, and save as `Application Support/canvas-strokes.json` on a background queue. Clearing asks for confirmation, undo can't crash on an empty drawing, and the controls have labels and 44 pt targets. | A journal entry survived a relaunch. Two strokes kept their own colors after relaunch. Undo removed the last stroke and the file matched. 200 strokes of 150 points measure 0.8 MB of JSON and take 31 ms to encode on this Mac (Apple silicon, optimized build), off the main thread. |
+| Drawn island collides with the cutout | **Fixed** | `DynamicIslandControl` (pretend island, static LIVE badge, 64% bar) is removed. The status region's height comes from the device's real top safe-area inset (`shellSafeAreaInsets`). In apps it is a `.safeAreaInset`, so navigation backgrounds extend beneath it. | Device-masked lock screen captures: one hardware island on iPhone 18 Pro, and only the notch on iPhone 17e. App screens show time and glyphs beside the cutout. |
+| Keyboard region ignored at the shell root (unverified) | **Not reproduced; remainder moved to P1** | No code change. | With the keyboard up, the fields stayed visible in the Notes editor, Journal and Reminders (18 Pro) and in the Messages composer (18 Pro and 17e). The bottom navigation bar sits under the keyboard, as the iOS home indicator does. The in-app home swipe still can't be used while the keyboard is up (O7). That belongs to the gesture-ownership work (brief §21) and is tracked there as P1. The independent reviewer argued for keeping it P0 until that gesture passes. This log records the disagreement instead of closing it silently. |
+
+Independent review (read-only, brief §24): accepted the island removal within the stated evidence. Accepted the data-safety fixes on two conditions, unbounded Canvas storage (F1) and copy that didn't match behavior (F2), and both are addressed above. Lower findings were also addressed: fixed sample IDs, a safe undo, and a documented note that the inset environment's bottom includes the keyboard. Left open: corrupt data gets a backup but no visible notice or recovery screen (P3), and the status glyphs are still fabricated (P1, unchanged from the baseline).
+
+New observation: the real iOS home indicator sometimes shows below the app's own bottom bar (seen in Reminders). That's already part of the P1 "custom home indicator" finding.
+
 ## Audit health score
 
 | # | Dimension | Score | Key finding |
@@ -74,6 +92,8 @@ Captures are kept outside the repository (session scratch) until the brand pass 
 Only headline findings are listed. Every entry has `file:line` evidence in the detail files.
 
 ### P0 — blocking
+
+Status after M1 is in the [milestone log](#milestone-log). The entries below describe the baseline.
 
 - **[P0] Demo reset erases personal content.** Settings → Transfer or Reset. *Category:* data integrity. *Impact:* irreversible loss of the user's notes, reminders and messages behind copy that promises otherwise. *Recommendation:* separate sample stores from personal stores, and make the reset touch only sample data. *Command:* `/impeccable harden`.
 - **[P0] Drawn island collides with the hardware cutout.** Shell status region, every phase. Observed on iPhone 18 Pro (offset overlap, O2) and iPhone 17e (painted island below the notch, O15). *Category:* conformance. *Guideline:* HIG Layout. Don't draw under or imitate the camera housing. *Recommendation:* remove the pretend island. Derive the top region from safe-area insets. Keep an app-owned activity surface only if it's tied to a real activity model and placed safely (brief §23). *Command:* `/impeccable adapt`.
