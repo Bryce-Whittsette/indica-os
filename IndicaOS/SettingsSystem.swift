@@ -107,6 +107,7 @@ private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
 struct IndicaSettingsApp: View {
     @EnvironmentObject private var system: IndicaSystem
     @EnvironmentObject private var connections: ConnectionStore
+    @ObservedObject private var device = DeviceStatus.shared
     @State private var query = ""
 
     private let connectionRoutes: [SettingsRoute] = [.wifi, .bluetooth, .cellular, .vpn]
@@ -168,7 +169,7 @@ struct IndicaSettingsApp: View {
 
                     Section {
                         VStack(alignment: .leading, spacing: 7) {
-                            Text("Indica OS 0.4")
+                            Text("Swift UI \(AppInfo.version)")
                                 .font(.headline)
                             Text("An original interactive iPhone-style simulator. It does not replace iOS and is not affiliated with Apple.")
                                 .font(.caption)
@@ -199,7 +200,7 @@ struct IndicaSettingsApp: View {
 
     private func routeDetail(_ route: SettingsRoute) -> String? {
         switch route {
-        case .wifi: DeviceStatus.shared.network == .wifi ? "Connected" : "Not connected"
+        case .wifi: device.network == .wifi ? "Connected" : "Not connected"
         case .bluetooth: system.bluetoothEnabled ? "On" : "Off"
         case .vpn: "Not Connected"
         case .notifications: "\(system.notifications.count) recent"
@@ -207,7 +208,7 @@ struct IndicaSettingsApp: View {
         case .display: system.appearance.rawValue
         case .wallpaper: system.wallpaper.rawValue
         case .glass: "\(Int(system.glassIntensity * 100))%"
-        case .battery: system.lowPowerMode ? "Low Power Mode" : (DeviceStatus.shared.batteryPercentText ?? "Unavailable")
+        case .battery: device.batteryPercentText ?? "Unavailable"
         case .connections: "\(connections.connectedCount) ready"
         default: route.detail
         }
@@ -353,31 +354,27 @@ private struct WiFiSettingsView: View {
     @EnvironmentObject private var system: IndicaSystem
     @AppStorage("askToJoinNetworks") private var askToJoin = true
     @AppStorage("autoJoinHotspot") private var autoJoinHotspot = true
+    @ObservedObject private var device = DeviceStatus.shared
 
     var body: some View {
         Form {
             Section {
-                Toggle("Wi-Fi", isOn: $system.wifiEnabled)
+                LabeledContent("Active Connection", value: device.network.description)
+            } header: {
+                Text("This iPhone")
             } footer: {
-                Text("Wi-Fi is simulated inside Indica OS. Network access still follows the host iPhone or Simulator.")
+                Text("iOS doesn’t share the Wi-Fi network name with this app. Choose a network in the Settings app under Wi-Fi.")
+            }
+
+            Section {
+                Toggle("Wi-Fi", isOn: $system.wifiEnabled)
+            } header: {
+                Text("Simulated")
+            } footer: {
+                Text("These switches are simulated. They change only Swift UI’s own state, not this iPhone’s Wi-Fi.")
             }
 
             if system.wifiEnabled {
-                Section("My Networks") {
-                    HStack {
-                        Image(systemName: DeviceStatus.shared.network == .wifi ? "checkmark" : "circle.dashed")
-                            .foregroundStyle(.blue)
-                        Text(DeviceStatus.shared.network == .wifi ? "Connected to Wi-Fi" : "Not on Wi-Fi")
-                        Spacer()
-                        Image(systemName: "lock.fill")
-                        Image(systemName: "wifi")
-                    }
-                    NavigationLink("Other…") {
-                        Text("Join another network")
-                            .navigationTitle("Other Network")
-                    }
-                }
-
                 Section {
                     Toggle("Ask to Join Networks", isOn: $askToJoin)
                     Toggle("Auto-Join Hotspot", isOn: $autoJoinHotspot)
@@ -427,6 +424,7 @@ private struct CellularSettingsView: View {
     @AppStorage("cellularDataEnabled") private var cellularData = true
     @AppStorage("dataRoaming") private var dataRoaming = false
     @AppStorage("lowDataMode") private var lowDataMode = false
+    @ObservedObject private var device = DeviceStatus.shared
 
     var body: some View {
         Form {
@@ -434,10 +432,14 @@ private struct CellularSettingsView: View {
                 Toggle("Mobile Data", isOn: $cellularData)
                 Toggle("Data Roaming", isOn: $dataRoaming)
                 Toggle("Low Data Mode", isOn: $lowDataMode)
+            } header: {
+                Text("Simulated")
+            } footer: {
+                Text("These switches are simulated. They change only Swift UI’s own state, not this iPhone’s cellular settings.")
             }
 
             Section {
-                LabeledContent("Active Connection", value: DeviceStatus.shared.network.description)
+                LabeledContent("Active Connection", value: device.network.description)
             } header: {
                 Text("Plan")
             } footer: {
@@ -1055,46 +1057,33 @@ private struct PermissionExplanationView: View {
 }
 
 private struct BatterySettingsView: View {
-    @EnvironmentObject private var system: IndicaSystem
+    @ObservedObject private var device = DeviceStatus.shared
+    @State private var isLowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
 
-    private let levels: [CGFloat] = [0.78, 0.73, 0.69, 0.62, 0.58, 0.51, 0.44, 0.38, 0.31, 0.24]
+    private var stateText: String {
+        switch device.batteryState {
+        case .charging: "Charging"
+        case .full: "Full"
+        case .unplugged: "Not charging"
+        case .unknown: "Unavailable"
+        @unknown default: "Unavailable"
+        }
+    }
 
     var body: some View {
         Form {
             Section {
-                Toggle("Low Power Mode", isOn: $system.lowPowerMode)
-                Toggle("Battery Percentage", isOn: $system.batteryPercentage)
-            }
-
-            Section("Battery Level") {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .bottom, spacing: 5) {
-                        ForEach(Array(levels.enumerated()), id: \.offset) { _, level in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(level < 0.3 ? .red : .green)
-                                .frame(height: 105 * level)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 110, alignment: .bottom)
-                    HStack {
-                        Text("12 AM")
-                        Spacer()
-                        Text("Now")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-            }
-
-            Section {
-                LabeledContent("Current Level", value: DeviceStatus.shared.batteryPercentText ?? "Unavailable")
-            } header: {
-                Text("Battery Health")
+                LabeledContent("Current Level", value: device.batteryPercentText ?? "Unavailable")
+                LabeledContent("Status", value: stateText)
+                LabeledContent("Low Power Mode", value: isLowPowerOn ? "On" : "Off")
             } footer: {
-                Text("iOS doesn’t share maximum capacity, cycle count, or charging settings with apps. Check them in the Settings app under Battery.")
+                Text("iOS doesn’t share battery history, maximum capacity, or cycle count with apps, and only you can change Low Power Mode. See the Settings app under Battery.")
             }
         }
         .navigationTitle("Battery")
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            isLowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
     }
 }
 
