@@ -36,13 +36,15 @@ Independent review (read-only, brief §24): accepted the island removal within t
 
 ### M2 — truthfulness pass (v0.2.0)
 
-Simulator only (iPhone 18 Pro, iOS 27.2). The build had no Swift warnings, and the 13 calculator checks passed. This milestone had no independent review.
+Simulator only (iPhone 18 Pro, iOS 27.2). The build had no Swift warnings, and the 13 calculator checks passed. CI builds with Xcode 26.6.
+
+Independent review (read-only, source only) of the release candidate found no P0s and two P1 blockers, both fixed: a stale "Indica OS 0.4" version string in Settings, and Wi-Fi rows that mixed real status with a simulated switch. It also led to Settings rows that update live, strict mail link encoding (round-trip tested with `&`, `+`, `=`, `?`, a newline and an accent; the handoff itself wasn't run), and clearer changelog wording. While fixing these, the implementer also removed a fabricated battery history chart and two dead Battery switches. Left open: Phone Recents still simulate a call (P2, labeled demo); a Calendar left open past midnight keeps the old "today" until it redraws (P3); note search results open Notes rather than the note (P3); some in-app strings still say Indica until the brand migration (P3).
 
 | Finding | Status | Evidence |
 |---|---|---|
 | Fabricated status glyphs and Settings battery facts (P1) | Fixed: `DeviceStatus` (NWPathMonitor and UIDevice). Values iOS doesn't provide are omitted. | Status bar shows Wi-Fi only on the simulator, which reports no battery level. The cellular bars are gone. |
 | Search does nothing (P1) | Fixed: a search sheet for apps and notes | Searching "aud" found the Claude app and the user note. Tapping the note opened Notes. |
-| Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 36 apps | Seen in Weather and Calendar. |
+| Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 33 apps. The baseline's 36 demos included Journal and Canvas, which now work, and Settings, which is partly real and not labeled. | Seen in Weather and Calendar. |
 | Calendar fixed to July 2026 (P1) | Fixed: real month and today, with month navigation | Captured November 2026 with Tuesday the 3rd as today. |
 | Mail "Send", Phone keypad call, Gmail → YouTube (P1) | Fixed: `mailto:`, `tel:` and per-app handoffs | Source only. Handoffs need a physical device. |
 | Switcher, Tips and Weather copy mismatches, and the AI "Connected" label (P1/P2) | Fixed (copy) | Source, plus the Weather capture. |

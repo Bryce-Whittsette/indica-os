@@ -832,14 +832,18 @@ private struct MailComposer: View {
     /// Mail is sent by the system mail app, where the person reviews and sends
     /// it. Swift UI never reports a message as sent.
     private func handOffToMail() {
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = to.trimmingCharacters(in: .whitespaces)
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: subject),
-            URLQueryItem(name: "body", value: bodyText)
-        ]
-        guard let url = components.url else { return }
+        // URLQueryItem leaves "+" and "&"-style separators ambiguous for mail
+        // clients, so each value is encoded strictly.
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        func encoded(_ value: String) -> String {
+            value.addingPercentEncoding(withAllowedCharacters: allowed) ?? ""
+        }
+        var addressAllowed = allowed
+        addressAllowed.insert(charactersIn: "@,+")
+        let address = to.trimmingCharacters(in: .whitespaces)
+            .addingPercentEncoding(withAllowedCharacters: addressAllowed) ?? ""
+        guard let url = URL(string: "mailto:\(address)?subject=\(encoded(subject))&body=\(encoded(bodyText))") else { return }
         UIApplication.shared.open(url, options: [:]) { opened in
             if opened {
                 dismiss()
