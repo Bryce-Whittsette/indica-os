@@ -463,38 +463,12 @@ private struct HomeScreen: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
 
-                Button {
-                    HapticEngine.play(.selection, enabled: system.hapticsEnabled)
-                    isSearching = true
-                } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 9, weight: .bold))
-
-                        Text("Search")
-                            .font(.system(size: 10, weight: .semibold, design: .rounded))
-
-                        HStack(spacing: 4) {
-                            ForEach(system.homePages.indices, id: \.self) { index in
-                                Capsule()
-                                    .fill(system.wallpaper.foreground.opacity(index == page ? 0.92 : 0.32))
-                                    .frame(width: index == page ? 12 : 5, height: 5)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 11)
-                    .frame(height: 28)
-                    .liquidGlass(cornerRadius: 14, intensity: 0.54)
-                }
-                .buttonStyle(PressableButtonStyle(scale: 0.95))
-                .accessibilityLabel("Search")
-                .accessibilityValue("Page \(page + 1) of \(system.homePages.count)")
-                .accessibilityAction(named: "Next page") {
-                    withAnimation { page = min(page + 1, system.homePages.count - 1) }
-                }
-                .accessibilityAction(named: "Previous page") {
-                    withAnimation { page = max(page - 1, 0) }
-                }
+                SearchPagePill(
+                    page: $page,
+                    pageCount: system.homePages.count,
+                    foreground: system.wallpaper.foreground,
+                    onSearch: { isSearching = true }
+                )
                 .padding(.vertical, metrics.pageIndicatorPadding)
 
                 HStack(spacing: metrics.dockSpacing) {
@@ -539,8 +513,12 @@ private struct HomeScreen: View {
                     .padding(.top, metrics.homeIndicatorTopPadding)
                     .padding(.bottom, 7)
             }
-            .onChange(of: page) { _, _ in
+            .onChange(of: page) { _, newPage in
                 HapticEngine.play(.selection, enabled: system.hapticsEnabled)
+                UIAccessibility.post(
+                    notification: .announcement,
+                    argument: "Page \(newPage + 1) of \(system.homePages.count)"
+                )
             }
             .onLongPressGesture(minimumDuration: 0.52) {
                 HapticEngine.play(.rigid, enabled: system.hapticsEnabled)
@@ -657,6 +635,111 @@ private struct HomeWidgetRow: View {
             .liquidGlass(cornerRadius: 24, intensity: 0.56)
         }
         .frame(height: height)
+    }
+}
+
+/// The pill under the Home Screen grid. A tap opens search. Holding it, then
+/// moving sideways, moves through the pages: the page follows the finger, clamps
+/// at the first and last page, and stays where it is on release. Reversing
+/// direction just changes the target page, so nothing queues.
+private struct SearchPagePill: View {
+    @EnvironmentObject private var system: IndicaSystem
+    @Binding var page: Int
+    let pageCount: Int
+    let foreground: Color
+    let onSearch: () -> Void
+
+    private enum Phase {
+        case idle, pressing, scrubbing, cancelled
+    }
+
+    @State private var phase: Phase = .idle
+    @State private var startPage = 0
+    @State private var holdTask: Task<Void, Never>?
+
+    private let holdDuration: Duration = .milliseconds(280)
+    private let moveTolerance: CGFloat = 10
+    private let pointsPerPage: CGFloat = 44
+
+    var body: some View {
+        HStack(spacing: 7) {
+            if phase != .scrubbing {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 9, weight: .bold))
+
+                Text("Search")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+            }
+
+            HStack(spacing: phase == .scrubbing ? 8 : 4) {
+                ForEach(0..<pageCount, id: \.self) { index in
+                    Capsule()
+                        .fill(foreground.opacity(index == page ? 0.92 : 0.32))
+                        .frame(width: index == page ? 12 : 5, height: 5)
+                }
+            }
+        }
+        .padding(.horizontal, phase == .scrubbing ? 18 : 11)
+        .frame(height: 28)
+        .liquidGlass(cornerRadius: 14, intensity: 0.54)
+        .scaleEffect(phase == .pressing ? 0.95 : (phase == .scrubbing ? 1.12 : 1))
+        .animation(.spring(response: 0.26, dampingFraction: 0.78), value: phase)
+        .contentShape(Rectangle().inset(by: -10))
+        // High priority keeps the hold from also starting Home Screen editing or a page swipe.
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged(handleChange)
+                .onEnded(handleEnd)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Search")
+        .accessibilityValue("Page \(page + 1) of \(pageCount)")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onSearch() }
+        .accessibilityAction(named: "Next page") { moveToPage(page + 1) }
+        .accessibilityAction(named: "Previous page") { moveToPage(page - 1) }
+    }
+
+    private func handleChange(_ value: DragGesture.Value) {
+        switch phase {
+        case .idle:
+            phase = .pressing
+            holdTask = Task { @MainActor in
+                try? await Task.sleep(for: holdDuration)
+                guard !Task.isCancelled, phase == .pressing else { return }
+                startPage = page
+                phase = .scrubbing
+                HapticEngine.play(.medium, enabled: system.hapticsEnabled)
+            }
+            fallthrough
+        case .pressing:
+            // Moving before the hold completes isn't a tap or a scrub.
+            if hypot(value.translation.width, value.translation.height) > moveTolerance {
+                holdTask?.cancel()
+                phase = .cancelled
+            }
+        case .scrubbing:
+            moveToPage(startPage + Int((value.translation.width / pointsPerPage).rounded()))
+        case .cancelled:
+            break
+        }
+    }
+
+    private func handleEnd(_ value: DragGesture.Value) {
+        holdTask?.cancel()
+        if phase == .pressing {
+            HapticEngine.play(.selection, enabled: system.hapticsEnabled)
+            onSearch()
+        }
+        phase = .idle
+    }
+
+    private func moveToPage(_ target: Int) {
+        let clamped = min(max(target, 0), pageCount - 1)
+        guard clamped != page else { return }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.88)) {
+            page = clamped
+        }
     }
 }
 
@@ -1334,8 +1417,32 @@ private struct HybridAppNavigationBar: View {
     }
 }
 
+/// Recent apps. One drag handles both axes: sideways moves through the cards and
+/// settles on the nearest one; upward follows the finger on the card under it and
+/// closes it past a distance or velocity threshold, otherwise it springs back. The
+/// axis is chosen once per drag, so the two can't compete. Closing removes the
+/// card only: saved content is untouched.
 private struct AppSwitcher: View {
     @EnvironmentObject private var system: IndicaSystem
+
+    private enum Axis {
+        case horizontal, vertical
+    }
+
+    @State private var focusedIndex = 0
+    @State private var dragX: CGFloat = 0
+    @State private var axis: Axis?
+    @State private var draggedApp: BuiltInApp?
+    @State private var dragY: CGFloat = 0
+    @State private var closingApp: BuiltInApp?
+    /// A button still fires when the finger lifts after a drag, so a release
+    /// that ended a drag must not count as a tap.
+    @State private var didDrag = false
+
+    private let cardWidth: CGFloat = 292
+    private let cardSpacing: CGFloat = 16
+    private let closeDistance: CGFloat = 130
+    private var step: CGFloat { cardWidth + cardSpacing }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1347,45 +1454,31 @@ private struct AppSwitcher: View {
                 ContentUnavailableView("No Recent Apps", systemImage: "rectangle.stack")
                     .foregroundStyle(system.wallpaper.foreground)
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
+                GeometryReader { proxy in
+                    let leading = (proxy.size.width - cardWidth) / 2
+                    HStack(spacing: cardSpacing) {
                         ForEach(system.appHistory) { app in
-                            Button {
-                                system.open(app)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    HStack {
-                                        MiniAppMark(app: app)
-                                        Text(app.name)
-                                            .font(.system(size: 14, weight: .semibold, design: .default))
-                                        Spacer()
-                                        Button {
-                                            withAnimation {
-                                                system.appHistory.removeAll { $0 == app }
-                                            }
-                                        } label: {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-
-                                    AppPreviewCard(app: app)
-                                }
-                                .padding(12)
-                                .frame(width: 292, height: 535)
-                                .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 32, style: .continuous))
-                                .shadow(color: .black.opacity(0.3), radius: 24, y: 14)
-                            }
-                            .buttonStyle(PressableButtonStyle(scale: 0.98))
+                            card(for: app)
                         }
                     }
-                    .padding(.horizontal, 48)
+                    .offset(x: leading - CGFloat(focusedIndex) * step + dragX)
+                    .frame(maxHeight: .infinity, alignment: .center)
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(dragGesture(leading: leading))
+                    .accessibilityScrollAction { edge in
+                        switch edge {
+                        case .trailing: moveFocus(to: focusedIndex + 1)
+                        case .leading: moveFocus(to: focusedIndex - 1)
+                        default: break
+                        }
+                    }
                 }
+                .frame(height: 535)
             }
 
             Spacer()
 
-            Text("Tap a card to open it. Tap × to close it.")
+            Text("Tap a card to open it. Swipe up to close it.")
                 .font(.system(size: 11, weight: .semibold, design: .default))
                 .foregroundStyle(system.wallpaper.foreground.opacity(0.65))
 
@@ -1394,6 +1487,123 @@ private struct AppSwitcher: View {
             }
             .padding(.top, 17)
             .padding(.bottom, 8)
+        }
+    }
+
+    private func card(for app: BuiltInApp) -> some View {
+        let lift = closingApp == app ? -900 : (draggedApp == app ? dragY : 0)
+        return Button {
+            guard !didDrag else { return }
+            system.open(app)
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    MiniAppMark(app: app)
+                    Text(app.name)
+                        .font(.system(size: 14, weight: .semibold, design: .default))
+                    Spacer()
+                }
+
+                AppPreviewCard(app: app)
+            }
+            .padding(12)
+            .frame(width: cardWidth, height: 535)
+            .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 32, style: .continuous))
+            .shadow(color: .black.opacity(0.3), radius: 24, y: 14)
+        }
+        .buttonStyle(PressableButtonStyle(scale: 0.98))
+        .offset(y: lift)
+        .opacity(1 - min(Double(-lift) / 700, 0.6))
+        .accessibilityLabel(app.name)
+        .accessibilityHint("Opens the app")
+        .accessibilityAction(named: "Close \(app.name)") {
+            close(app)
+        }
+    }
+
+    private func dragGesture(leading: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged { value in
+                didDrag = true
+                if axis == nil {
+                    let isUpward = value.translation.height < 0
+                        && abs(value.translation.height) > abs(value.translation.width)
+                    axis = isUpward ? .vertical : .horizontal
+                    if isUpward {
+                        draggedApp = app(atX: value.startLocation.x, leading: leading)
+                    }
+                }
+                switch axis {
+                case .vertical:
+                    // Downward movement resists, so the card can't be pulled away from its row.
+                    dragY = value.translation.height < 0 ? value.translation.height : value.translation.height * 0.15
+                case .horizontal:
+                    let atFirst = focusedIndex == 0 && value.translation.width > 0
+                    let atLast = focusedIndex == system.appHistory.count - 1 && value.translation.width < 0
+                    dragX = atFirst || atLast ? value.translation.width * 0.3 : value.translation.width
+                case nil:
+                    break
+                }
+            }
+            .onEnded { value in
+                defer {
+                    axis = nil
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(80))
+                        didDrag = false
+                    }
+                }
+                switch axis {
+                case .vertical:
+                    if let draggedApp,
+                       value.translation.height < -closeDistance
+                        || value.predictedEndTranslation.height < -closeDistance * 2.5 {
+                        close(draggedApp)
+                    } else {
+                        withAnimation(.interactiveSpring(response: 0.34, dampingFraction: 0.8)) {
+                            dragY = 0
+                        }
+                    }
+                case .horizontal:
+                    let cardsMoved = Int((-value.predictedEndTranslation.width / step).rounded())
+                    moveFocus(to: focusedIndex + cardsMoved)
+                case nil:
+                    break
+                }
+            }
+    }
+
+    /// The card under a screen position, given the row's current scroll position.
+    private func app(atX x: CGFloat, leading: CGFloat) -> BuiltInApp? {
+        let position = (x - leading) / step + CGFloat(focusedIndex)
+        let index = min(max(Int(position.rounded(.down)), 0), system.appHistory.count - 1)
+        return system.appHistory.indices.contains(index) ? system.appHistory[index] : nil
+    }
+
+    private func moveFocus(to target: Int) {
+        withAnimation(.interactiveSpring(response: 0.36, dampingFraction: 0.86)) {
+            focusedIndex = min(max(target, 0), max(system.appHistory.count - 1, 0))
+            dragX = 0
+        }
+    }
+
+    private func close(_ app: BuiltInApp) {
+        HapticEngine.play(.light, enabled: system.hapticsEnabled)
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            closingApp = app
+        }
+        Task {
+            try? await Task.sleep(for: .milliseconds(220))
+            withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+                system.appHistory.removeAll { $0 == app }
+                focusedIndex = min(focusedIndex, max(system.appHistory.count - 1, 0))
+                draggedApp = nil
+                closingApp = nil
+                dragY = 0
+                if system.appHistory.isEmpty {
+                    system.goHome()
+                }
+            }
         }
     }
 }
