@@ -76,6 +76,16 @@ private struct PhoneApp: View {
     @State private var tab = 1
     @State private var number = ""
     @State private var activeCall: String?
+    @State private var callUnavailable = false
+
+    /// Hands the number to the system Phone app, which asks before calling.
+    private func dial(_ digits: String) {
+        let allowed = digits.filter { "0123456789+*#".contains($0) }
+        guard !allowed.isEmpty, let url = URL(string: "tel:\(allowed)") else { return }
+        UIApplication.shared.open(url, options: [:]) { opened in
+            if !opened { callUnavailable = true }
+        }
+    }
 
     private let recents = [
         ("Maya Chen", "mobile", "10:42 AM", false),
@@ -157,7 +167,7 @@ private struct PhoneApp: View {
                             Color.clear.frame(width: 62, height: 62)
                             Button {
                                 guard !number.isEmpty else { return }
-                                activeCall = number
+                                dial(number)
                             } label: {
                                 Image(systemName: "phone.fill")
                                     .font(.system(size: 24, weight: .semibold))
@@ -188,6 +198,11 @@ private struct PhoneApp: View {
             .navigationTitle("Phone")
             .sheet(item: $activeCall) { contact in
                 CallScreen(contact: contact)
+            }
+            .alert("Can’t Place Calls", isPresented: $callUnavailable) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This device can’t make phone calls, so the number wasn’t dialed.")
             }
         }
     }
@@ -800,9 +815,36 @@ private struct MailComposer: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Send") { dismiss() }
+                    Button("Open in Mail") { handOffToMail() }
                         .disabled(to.isEmpty)
                 }
+            }
+            .alert("No Mail App", isPresented: $mailUnavailable) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("No app on this device can send email, so nothing was sent.")
+            }
+        }
+    }
+
+    @State private var mailUnavailable = false
+
+    /// Mail is sent by the system mail app, where the person reviews and sends
+    /// it. Swift UI never reports a message as sent.
+    private func handOffToMail() {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = to.trimmingCharacters(in: .whitespaces)
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: bodyText)
+        ]
+        guard let url = components.url else { return }
+        UIApplication.shared.open(url, options: [:]) { opened in
+            if opened {
+                dismiss()
+            } else {
+                mailUnavailable = true
             }
         }
     }
@@ -952,20 +994,49 @@ private struct WeatherApp: View {
 }
 
 private struct CalendarApp: View {
-    @State private var selectedDay = 17
-    @State private var events: [Int: [String]] = [
-        17: ["Design review · 2:30 PM", "Dinner with Maya · 7:00 PM"],
-        21: ["Prototype handoff · 10:00 AM"]
-    ]
+    private let calendar = Calendar.current
+    @State private var selectedDate = Calendar.current.startOfDay(for: .now)
+    @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+    /// Sample events, placed relative to today so the demo always lines up with the real date.
+    @State private var events: [Date: [String]] = {
+        let today = Calendar.current.startOfDay(for: .now)
+        let later = Calendar.current.date(byAdding: .day, value: 4, to: today) ?? today
+        return [
+            today: ["Design review · 2:30 PM", "Dinner with Maya · 7:00 PM"],
+            later: ["Prototype handoff · 10:00 AM"]
+        ]
+    }()
     @State private var showingAdd = false
     @State private var newEvent = ""
+
+    /// Weekday symbols ordered from the locale's first weekday.
+    private var weekdaySymbols: [String] {
+        let symbols = calendar.veryShortWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        return Array(symbols[first...] + symbols[..<first])
+    }
+
+    /// Leading blanks (nil) followed by each day of the displayed month.
+    private var monthCells: [Date?] {
+        guard let range = calendar.range(of: .day, in: .month, for: displayedMonth) else { return [] }
+        let weekday = calendar.component(.weekday, from: displayedMonth)
+        let leading = (weekday - calendar.firstWeekday + 7) % 7
+        let days = range.compactMap { calendar.date(byAdding: .day, value: $0 - 1, to: displayedMonth) }
+        return Array(repeating: nil, count: leading) + days
+    }
+
+    private func moveMonth(by value: Int) {
+        if let month = calendar.date(byAdding: .month, value: value, to: displayedMonth) {
+            displayedMonth = month
+        }
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
                     HStack {
-                        ForEach(Calendar.current.veryShortWeekdaySymbols, id: \.self) { day in
+                        ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, day in
                             Text(day)
                                 .font(.caption.bold())
                                 .foregroundStyle(.secondary)
@@ -974,20 +1045,29 @@ private struct CalendarApp: View {
                     }
 
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 12) {
-                        ForEach(1...31, id: \.self) { day in
-                            Button {
-                                selectedDay = day
-                            } label: {
-                                VStack(spacing: 4) {
-                                    Text("\(day)")
-                                        .font(.system(size: 15, weight: selectedDay == day ? .bold : .medium, design: .rounded))
-                                        .frame(width: 34, height: 34)
-                                        .background(selectedDay == day ? .red : .clear, in: Circle())
-                                        .foregroundStyle(selectedDay == day ? .white : .primary)
-                                    Circle()
-                                        .fill(events[day]?.isEmpty == false ? Color.red : .clear)
-                                        .frame(width: 4, height: 4)
+                        ForEach(Array(monthCells.enumerated()), id: \.offset) { _, cell in
+                            if let date = cell {
+                                let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+                                let isToday = calendar.isDateInToday(date)
+                                Button {
+                                    selectedDate = date
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        Text("\(calendar.component(.day, from: date))")
+                                            .font(.system(size: 15, weight: isSelected || isToday ? .bold : .medium, design: .rounded))
+                                            .frame(width: 34, height: 34)
+                                            .background(isSelected ? .red : .clear, in: Circle())
+                                            .foregroundStyle(isSelected ? .white : (isToday ? .red : .primary))
+                                        Circle()
+                                            .fill(events[date]?.isEmpty == false ? Color.red : .clear)
+                                            .frame(width: 4, height: 4)
+                                    }
+                                    .frame(minWidth: 44, minHeight: 44)
                                 }
+                                .accessibilityLabel(date.formatted(date: .complete, time: .omitted))
+                                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                            } else {
+                                Color.clear.frame(height: 42)
                             }
                         }
                     }
@@ -995,9 +1075,9 @@ private struct CalendarApp: View {
                     Divider()
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("July \(selectedDay)")
+                        Text(selectedDate.formatted(.dateTime.month(.wide).day()))
                             .font(.title2.bold())
-                        if let dayEvents = events[selectedDay], !dayEvents.isEmpty {
+                        if let dayEvents = events[selectedDate], !dayEvents.isEmpty {
                             ForEach(dayEvents, id: \.self) { event in
                                 HStack(spacing: 12) {
                                     Capsule()
@@ -1019,12 +1099,23 @@ private struct CalendarApp: View {
                 }
                 .padding()
             }
-            .navigationTitle("July 2026")
+            .navigationTitle(displayedMonth.formatted(.dateTime.month(.wide).year()))
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarLeading) {
+                    Button { moveMonth(by: -1) } label: { Image(systemName: "chevron.left") }
+                        .accessibilityLabel("Previous month")
+                    Button { moveMonth(by: 1) } label: { Image(systemName: "chevron.right") }
+                        .accessibilityLabel("Next month")
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button("Today") {
+                        selectedDate = calendar.startOfDay(for: .now)
+                        displayedMonth = calendar.dateInterval(of: .month, for: .now)?.start ?? .now
+                    }
                     Button {
                         showingAdd = true
                     } label: { Image(systemName: "plus") }
+                        .accessibilityLabel("Add event")
                 }
             }
             .alert("New Event", isPresented: $showingAdd) {
@@ -1032,7 +1123,7 @@ private struct CalendarApp: View {
                 Button("Cancel", role: .cancel) {}
                 Button("Add") {
                     guard !newEvent.isEmpty else { return }
-                    events[selectedDay, default: []].append(newEvent)
+                    events[selectedDate, default: []].append(newEvent)
                     newEvent = ""
                 }
             }

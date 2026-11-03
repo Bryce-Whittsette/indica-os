@@ -1194,18 +1194,19 @@ private struct AppHost: View {
                     // A real top inset lets navigation bars extend their
                     // background beneath the status region, as on iOS.
                     .safeAreaInset(edge: .top, spacing: 0) {
-                        VStack(spacing: 0) {
-                            SystemStatusBar(foreground: .primary)
-                            if app.isConceptDemo {
-                                Label("Concept demo · sample data", systemImage: "theatermasks")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(.thinMaterial, in: Capsule())
-                                    .padding(.bottom, 4)
-                                    .accessibilityLabel("Concept demo. This app shows sample data and simulated results.")
-                            }
+                        SystemStatusBar(foreground: .primary)
+                    }
+                    // Below the content, so it never collides with navigation bar controls.
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        if app.isConceptDemo {
+                            Label("Concept demo · sample data", systemImage: "theatermasks")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(.thinMaterial, in: Capsule())
+                                .padding(.vertical, 4)
+                                .accessibilityLabel("Concept demo. This app shows sample data and simulated results.")
                         }
                     }
 
