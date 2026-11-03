@@ -199,7 +199,7 @@ struct IndicaSettingsApp: View {
 
     private func routeDetail(_ route: SettingsRoute) -> String? {
         switch route {
-        case .wifi: system.wifiEnabled ? "Example Network" : "Off"
+        case .wifi: DeviceStatus.shared.network == .wifi ? "Connected" : "Not connected"
         case .bluetooth: system.bluetoothEnabled ? "On" : "Off"
         case .vpn: "Not Connected"
         case .notifications: "\(system.notifications.count) recent"
@@ -365,9 +365,9 @@ private struct WiFiSettingsView: View {
             if system.wifiEnabled {
                 Section("My Networks") {
                     HStack {
-                        Image(systemName: "checkmark")
+                        Image(systemName: DeviceStatus.shared.network == .wifi ? "checkmark" : "circle.dashed")
                             .foregroundStyle(.blue)
-                        Text("Example Network")
+                        Text(DeviceStatus.shared.network == .wifi ? "Connected to Wi-Fi" : "Not on Wi-Fi")
                         Spacer()
                         Image(systemName: "lock.fill")
                         Image(systemName: "wifi")
@@ -436,10 +436,12 @@ private struct CellularSettingsView: View {
                 Toggle("Low Data Mode", isOn: $lowDataMode)
             }
 
-            Section("Plan") {
-                LabeledContent("Network", value: "Indica Mobile")
-                LabeledContent("Current Period", value: "6.8 GB")
-                LabeledContent("Roaming", value: "0 KB")
+            Section {
+                LabeledContent("Active Connection", value: DeviceStatus.shared.network.description)
+            } header: {
+                Text("Plan")
+            } footer: {
+                Text("iOS doesn’t share your carrier or data usage with apps. See the Settings app under Cellular.")
             }
         }
         .navigationTitle("Mobile Service")
@@ -1130,50 +1132,87 @@ private struct AboutSettingsView: View {
                 TextField("Name", text: $system.deviceName)
             }
             Section {
-                LabeledContent("Indica OS Version", value: "0.4 (Prototype)")
-                LabeledContent("Model Name", value: "Indica Phone Pro")
-                LabeledContent("Model Number", value: "IND-A284")
-                LabeledContent("Serial Number", value: "SIM-INDICA-001")
+                LabeledContent("Swift UI Version", value: AppInfo.version)
+                LabeledContent("Device", value: UIDevice.current.model)
+                LabeledContent("System", value: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)")
             }
             Section {
                 LabeledContent("Apps", value: "\(BuiltInApp.allCases.count)")
-                LabeledContent("Capacity", value: "256 GB")
-                LabeledContent("Available", value: "198.4 GB")
+                LabeledContent("Capacity", value: DeviceStorage.read()?.totalText ?? "Unavailable")
+                LabeledContent("Available", value: DeviceStorage.read()?.availableText ?? "Unavailable")
+            } footer: {
+                Text("iOS doesn’t share the serial number or exact model with apps. Find them in the Settings app under General › About.")
             }
         }
         .navigationTitle("About")
     }
 }
 
-private struct SoftwareUpdateSettingsView: View {
-    @EnvironmentObject private var system: IndicaSystem
-    @State private var isChecking = false
+/// The app's own version from its bundle.
+enum AppInfo {
+    static var version: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        return "\(short) (\(build))"
+    }
+}
 
+/// Device storage from the file system's volume attributes.
+struct DeviceStorage {
+    let total: Int64
+    let available: Int64
+
+    var used: Int64 { max(total - available, 0) }
+    var totalText: String { total.formatted(.byteCount(style: .file)) }
+    var availableText: String { available.formatted(.byteCount(style: .file)) }
+    var usedText: String { used.formatted(.byteCount(style: .file)) }
+
+    static func read() -> DeviceStorage? {
+        let values = try? URL(fileURLWithPath: NSHomeDirectory()).resourceValues(forKeys: [
+            .volumeTotalCapacityKey,
+            .volumeAvailableCapacityForImportantUsageKey
+        ])
+        guard let total = values?.volumeTotalCapacity,
+              let available = values?.volumeAvailableCapacityForImportantUsage else { return nil }
+        return DeviceStorage(total: Int64(total), available: available)
+    }
+
+    /// Bytes used by this app's own documents, caches and settings.
+    static func appDataSize() -> Int64 {
+        let home = URL(fileURLWithPath: NSHomeDirectory())
+        var total: Int64 = 0
+        for folder in ["Documents", "Library"] {
+            let enumerator = FileManager.default.enumerator(
+                at: home.appending(path: folder),
+                includingPropertiesForKeys: [.fileSizeKey]
+            )
+            while let url = enumerator?.nextObject() as? URL {
+                total += Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+            }
+        }
+        return total
+    }
+}
+
+private struct SoftwareUpdateSettingsView: View {
     var body: some View {
         Form {
             Section {
                 VStack(spacing: 13) {
-                    Image(systemName: "gear.badge.checkmark")
+                    Image(systemName: "shippingbox")
                         .font(.system(size: 48))
-                        .foregroundStyle(.green)
-                    Text("Indica OS is up to date")
-                        .font(.headline)
-                    Text("0.4")
                         .foregroundStyle(.secondary)
+                    Text("Swift UI \(AppInfo.version)")
+                        .font(.headline)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
+            } footer: {
+                Text("Swift UI can’t check for updates by itself. New versions are published on GitHub. Updates to iOS are in the Settings app under General › Software Update.")
             }
             Section {
-                Toggle("Automatic Updates", isOn: $system.automaticUpdates)
-                Button(isChecking ? "Checking…" : "Check for Update") {
-                    isChecking = true
-                    Task {
-                        try? await Task.sleep(for: .seconds(1))
-                        isChecking = false
-                    }
-                }
-                .disabled(isChecking)
+                Link("View Releases on GitHub", destination: URL(string: "https://github.com/Bryce-Whittsette/indica-os/releases")!)
             }
         }
         .navigationTitle("Software Update")
@@ -1181,53 +1220,36 @@ private struct SoftwareUpdateSettingsView: View {
 }
 
 private struct StorageSettingsView: View {
-    private let storage: [(String, Double, Color)] = [
-        ("Apps", 0.24, .blue),
-        ("Photos", 0.14, .yellow),
-        ("Media", 0.09, .purple),
-        ("System", 0.12, .gray)
-    ]
+    @State private var storage = DeviceStorage.read()
+    @State private var appDataSize: Int64?
 
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    GeometryReader { proxy in
-                        HStack(spacing: 2) {
-                            ForEach(storage, id: \.0) { item in
-                                Rectangle()
-                                    .fill(item.2)
-                                    .frame(width: proxy.size.width * item.1)
-                            }
-                            Rectangle().fill(.gray.opacity(0.15))
-                        }
-                    }
-                    .frame(height: 16)
-                    Text("57.6 GB of 256 GB used")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 6)
-            }
-
-            Section("Recommendations") {
-                Label("Review Large Attachments", systemImage: "wand.and.stars")
-                Label("Offload Unused Apps", systemImage: "app.dashed")
-            }
-
-            Section("Apps") {
-                ForEach(BuiltInApp.allCases.prefix(14)) { app in
-                    HStack {
-                        AppSettingsMark(app: app)
-                        Text(app.name)
-                        Spacer()
-                        Text("\(Int.random(in: 45...820)) MB")
+                if let storage {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ProgressView(value: Double(storage.used), total: Double(max(storage.total, 1)))
+                        Text("\(storage.usedText) of \(storage.totalText) used")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                    .padding(.vertical, 6)
+                } else {
+                    Text("Device storage is unavailable.")
+                        .foregroundStyle(.secondary)
                 }
+            } footer: {
+                Text("iOS doesn’t share how much space other apps use. See the Settings app under General › iPhone Storage.")
+            }
+
+            Section("This App") {
+                LabeledContent("Swift UI data", value: appDataSize.map { $0.formatted(.byteCount(style: .file)) } ?? "Calculating…")
             }
         }
         .navigationTitle("Indica Storage")
+        .task {
+            appDataSize = await Task.detached(priority: .utility) { DeviceStorage.appDataSize() }.value
+        }
     }
 }
 
