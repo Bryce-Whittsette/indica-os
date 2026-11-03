@@ -1242,11 +1242,23 @@ private struct ClockRow: View {
 private struct NotesApp: View {
     @EnvironmentObject private var system: IndicaSystem
     @State private var editor: NoteItem?
+    @State private var query = ""
+
+    private var visibleNotes: [NoteItem] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return system.notes
+            .filter {
+                trimmed.isEmpty
+                    || $0.title.localizedCaseInsensitiveContains(trimmed)
+                    || $0.body.localizedCaseInsensitiveContains(trimmed)
+            }
+            .sorted { $0.modified > $1.modified }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(system.notes.sorted { $0.modified > $1.modified }) { note in
+                ForEach(visibleNotes) { note in
                     Button {
                         editor = note
                     } label: {
@@ -1265,11 +1277,21 @@ private struct NotesApp: View {
                     }
                 }
                 .onDelete { offsets in
-                    let sorted = system.notes.sorted { $0.modified > $1.modified }
-                    let ids = offsets.map { sorted[$0].id }
+                    let visible = visibleNotes
+                    let ids = offsets.map { visible[$0].id }
                     system.notes.removeAll { ids.contains($0.id) }
                 }
             }
+            .overlay {
+                if visibleNotes.isEmpty {
+                    if query.isEmpty {
+                        ContentUnavailableView("No Notes", systemImage: "note.text", description: Text("Tap the compose button to write one."))
+                    } else {
+                        ContentUnavailableView.search(text: query)
+                    }
+                }
+            }
+            .searchable(text: $query, prompt: "Search notes")
             .navigationTitle("Notes")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -1278,6 +1300,7 @@ private struct NotesApp: View {
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
+                    .accessibilityLabel("New note")
                 }
             }
             .sheet(item: $editor) { note in
@@ -1287,20 +1310,27 @@ private struct NotesApp: View {
     }
 }
 
+/// Saves on every edit, so swiping the sheet away or leaving the app keeps the
+/// text. A new note with nothing in it is never saved. Editing a sample note
+/// makes it the person's own.
 private struct NoteEditor: View {
     @EnvironmentObject private var system: IndicaSystem
     @Environment(\.dismiss) private var dismiss
     @State private var note: NoteItem
+    @FocusState private var isTitleFocused: Bool
+    private let isNew: Bool
 
     init(note: NoteItem) {
         _note = State(initialValue: note)
+        isNew = note.title.isEmpty && note.body.isEmpty
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 TextField("Title", text: $note.title)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.title.bold())
+                    .focused($isTitleFocused)
                     .padding(.horizontal)
                     .padding(.top)
                 TextEditor(text: $note.body)
@@ -1311,23 +1341,34 @@ private struct NoteEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        if let original = system.notes.first(where: { $0.id == note.id }),
-                           original.title == note.title, original.body == note.body {
-                            dismiss()
-                            return
-                        }
-                        note.modified = .now
-                        note.isSample = false
-                        if let index = system.notes.firstIndex(where: { $0.id == note.id }) {
-                            system.notes[index] = note
-                        } else {
-                            system.notes.append(note)
-                        }
-                        dismiss()
-                    }
+                    Button("Done") { dismiss() }
                 }
             }
+            .onAppear {
+                if isNew { isTitleFocused = true }
+            }
+            // The new value, not `note`: inside this action `note` can still hold the
+            // previous keystroke.
+            .onChange(of: note) { _, current in save(current) }
+            .onDisappear { save(note) }
+        }
+    }
+
+    private func save(_ current: NoteItem) {
+        let index = system.notes.firstIndex(where: { $0.id == current.id })
+        if let index {
+            let stored = system.notes[index]
+            guard stored.title != current.title || stored.body != current.body else { return }
+        } else {
+            guard !current.title.isEmpty || !current.body.isEmpty else { return }
+        }
+        var edited = current
+        edited.modified = .now
+        edited.isSample = false
+        if let index {
+            system.notes[index] = edited
+        } else {
+            system.notes.append(edited)
         }
     }
 }

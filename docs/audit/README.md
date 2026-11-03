@@ -50,6 +50,18 @@ Independent review (read-only, source only) of the release candidate found no P0
 | Switcher, Tips and Weather copy mismatches, and the AI "Connected" label (P1/P2) | Fixed (copy) | Source, plus the Weather capture. |
 | Forced 1.25 s boot delay (P2) | Removed | The lock screen follows the first frame. |
 
+### M3 — shell gestures and Notes autosave (unreleased, branch `swift-ui/shell-gestures`)
+
+Simulator only (iPhone 18 Pro, iOS 27.2), driven with scripted touches, so feel and frame pacing are unverified. No independent review yet.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Page scrubbing (brief §20) | Implemented | A hold-and-drag moved two pages. One gesture past the last page and back ended clamped on page 1. No Home editing started. A plain tap opened search. Pages step rather than track the finger continuously, so the "track continuously" requirement is only partly met. `UIPageControl` was not evaluated. |
+| Switcher swipe-to-close (O13) | Fixed | A partial swipe sprang back and stayed in the switcher. A sideways drag moved to the next card. A full swipe closed the card under the finger and kept the others. Tapping a card opened it. Closing the last card went Home. |
+| Notes autosave and search | Implemented | Text survived swipe-away and a hard kill, confirmed by relaunching and searching. Search found the note. |
+
+Bugs found by testing during M3: a release after a partial swipe opened the app; a card drag blocked the scroll view (replaced with a single drag per gesture); and autosave ran one keystroke behind, which left the note "Second autosav" in the simulator's test data (fixed by saving the new value). Reading the plist right after a kill also looked like data loss, but the file just lags `cfprefsd`, which already holds the data. Measure persistence by relaunching.
+
 New observation: the real iOS home indicator sometimes shows below the app's own bottom bar (seen in Reminders). That's already part of the P1 "custom home indicator" finding.
 
 ## Audit health score

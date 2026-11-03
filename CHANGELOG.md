@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Hold the Search pill and move sideways to move through Home Screen pages. It clamps at the first and last page and stays where you release. A tap still opens search, and the hold no longer starts Home Screen editing. Page changes are announced to VoiceOver.
+- Swipe a card up in the app switcher to close it. The card follows your finger and springs back if you let go early. Closing the last card goes Home. VoiceOver users get a Close action on each card.
+- Notes search, and an empty state when there are no notes.
+
+### Fixed
+- Notes save as you type, so swiping the editor away or leaving the app keeps your text. They only saved on Done before.
+- A new note starts with the cursor in the title, so typing no longer goes nowhere.
+- The app switcher's cards can be dragged sideways reliably, and releasing a partial swipe no longer opens the app.
+
+### Known limitations
+- Pages move one at a time as you scrub; the Home Screen doesn't slide continuously with your finger.
+- Switcher cards are still placeholders, not snapshots of the app.
+
 ## v0.2.0 — 2026-11-03
 
 The first release of the Swift UI overhaul (formerly Indica OS). It fixes data loss, removes misleading system UI, and makes several surfaces truthful. The visual redesign and brand migration come in a later release.
