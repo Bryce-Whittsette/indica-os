@@ -1117,7 +1117,7 @@ private struct TipsApp: View {
     private let tips = [
         ("System gestures", "Pull from the top-right for Control Center and top-left for notifications.", "hand.draw.fill", Color.blue),
         ("Make it yours", "Long-press the Lock Screen or Home Screen to enter customization.", "paintbrush.pointed.fill", Color.purple),
-        ("Switch quickly", "Swipe up from the bottom inside an app to reach the app switcher.", "rectangle.stack.fill", Color.orange)
+        ("Switch quickly", "Inside an app, tap the stacked-cards button in the bottom bar to see recent apps. Swipe up on the bar to go Home.", "rectangle.stack.fill", Color.orange)
     ]
 
     var body: some View {

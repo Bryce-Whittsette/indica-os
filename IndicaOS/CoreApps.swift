@@ -919,7 +919,7 @@ private struct WeatherApp: View {
                     .liquidGlass(cornerRadius: 24, intensity: 0.75)
 
                     VStack(alignment: .leading, spacing: 15) {
-                        Label("10-DAY FORECAST", systemImage: "calendar")
+                        Label("7-DAY FORECAST", systemImage: "calendar")
                             .font(.caption.bold())
                             .opacity(0.66)
                         ForEach(0..<7, id: \.self) { day in

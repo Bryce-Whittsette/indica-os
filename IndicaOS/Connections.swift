@@ -380,7 +380,7 @@ final class ConnectionStore: ObservableObject {
         try CredentialVault.save(trimmed, account: "\(service.rawValue).apiKey")
         accounts[service.rawValue] = ConnectedAccountRecord(
             displayName: "\(service.shortName) Developer API",
-            detail: "Credential stored in this device’s Keychain",
+            detail: "Key saved in this device’s Keychain. Not verified until a request succeeds.",
             connectedAt: .now
         )
         saveAccounts()
@@ -522,6 +522,28 @@ final class ConnectionStore: ObservableObject {
             lastError = nil
         } catch {
             lastError = error.localizedDescription
+        }
+    }
+
+    /// Opens the official app for a specific catalog entry. Services such as
+    /// Google back more than one app, so the app, not the service, picks the link.
+    func openOfficialApp(for app: BuiltInApp) {
+        let links: (app: String, web: String)? = switch app {
+        case .gmail: ("googlegmail://", "https://mail.google.com")
+        case .youtube: ("youtube://", "https://www.youtube.com")
+        case .outlook: ("ms-outlook://", "https://outlook.live.com")
+        default: nil
+        }
+        guard let links, let appURL = URL(string: links.app), let webURL = URL(string: links.web) else {
+            if let service = ConnectedService.service(for: app) {
+                openOfficialAppOrWebsite(service)
+            }
+            return
+        }
+        UIApplication.shared.open(appURL, options: [:]) { opened in
+            if !opened {
+                UIApplication.shared.open(webURL)
+            }
         }
     }
 
@@ -1090,7 +1112,9 @@ private struct ConnectionStatusPill: View {
 
     var body: some View {
         Label(
-            store.isConnected(service) ? "Connected" : "Not connected",
+            store.isConnected(service)
+                ? (service == .openAI || service == .anthropic ? "Key saved" : "Connected")
+                : "Not connected",
             systemImage: store.isConnected(service) ? "checkmark.circle.fill" : "circle.dashed"
         )
         .font(.caption.bold())
@@ -1239,11 +1263,11 @@ struct ConnectedServiceApp: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        store.openOfficialAppOrWebsite(service)
+                        store.openOfficialApp(for: app)
                     } label: {
                         Image(systemName: "arrow.up.forward.app")
                     }
-                    .accessibilityLabel("Open official \(service.shortName) app")
+                    .accessibilityLabel("Open official \(app.name) app")
                 }
             }
         }
@@ -1721,9 +1745,9 @@ private struct AssistantSettingsSheet: View {
 
                 Section("Connection") {
                     LabeledContent("Provider", value: service.name)
-                    LabeledContent("Credential", value: store.isConnected(service) ? "Stored in Keychain" : "Not configured")
+                    LabeledContent("Credential", value: store.isConnected(service) ? "Saved in Keychain, not verified" : "Not configured")
                     Button("Open API Key Dashboard") {
-                        store.openOfficialAppOrWebsite(service)
+                        UIApplication.shared.open(service.webURL)
                     }
                 }
 
