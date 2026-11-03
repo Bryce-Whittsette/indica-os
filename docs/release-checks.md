@@ -1,16 +1,26 @@
 # Release checks
 
-Completed locally: Swift syntax parse, project/plist validation, and calculator regression checks.
+## v0.2.0 (2026-11-03)
 
-Still required before describing the app as a tested iOS release:
+Done (simulator unless stated):
 
-- Build the shared scheme using Xcode 26 or newer.
-- Run on compact and large iPhone simulators. Check home navigation, app switching, keyboard dismissal, landscape restrictions, and safe areas.
-- Check VoiceOver focus, the largest Dynamic Type sizes, Reduce Motion, and Reduce Transparency.
-- Create/edit/delete a note and reminder, then relaunch to verify persistence.
-- Run Spotify sign-in, cancel sign-in, reconnect, expire an access token, and disconnect. Verify that revocation and failure messages are understandable.
-- Verify Keychain save/update/delete with a test credential and confirm no secret is written to logs or preferences.
-- Test assistant success, timeout, invalid credential, and empty response using a dedicated API test account.
-- Replace the historical screenshot with captures from this build.
+- [x] Shared scheme builds with Xcode 27.2 (local) and Xcode 26 (CI).
+- [x] Calculator regression checks: 13/13.
+- [x] iPhone 18 Pro and iPhone 17e: safe areas and camera cutout (device-masked captures), keyboard with text fields in Notes, Journal, Reminders and Messages.
+- [x] Notes, reminders and journal entries: create, then relaunch to confirm they persist. Canvas strokes persist with their own colors.
+- [x] Remove Sample Content keeps personal content, including after relaunch. Migration of an existing install. Unreadable data is backed up.
+- [x] Search finds apps and notes and opens results.
+- [x] Fresh screenshots from this build (`docs/images/v0.2.0/`).
+- [x] Independent review of the data-safety and cutout milestone (`docs/audit/README.md`).
 
-Sample-only apps should remain labeled as demonstrations until real implementations and tests replace them.
+Still required:
+
+- [ ] Physical iPhone: host-app exit with in-app gestures, the real cutout, battery and network values, `tel:` and `mailto:` handoffs.
+- [ ] iPhone 18 Pro Max simulator and the iOS 17 runtime.
+- [ ] VoiceOver walkthrough, largest Dynamic Type across the shell, Reduce Motion and Reduce Transparency.
+- [ ] Spotify sign-in, cancel, reconnect, token expiry and disconnect against a real account.
+- [ ] Keychain save/update/delete with a test credential; confirm no secret reaches logs or preferences.
+- [ ] Assistant success, timeout, invalid credential and empty response with a dedicated API test account. Re-verify the default model identifiers.
+- [ ] Startup, frame pacing and memory measurements.
+
+Concept demos stay labeled until real implementations and tests replace them.

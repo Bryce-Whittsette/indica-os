@@ -34,6 +34,20 @@ Verified on the iPhone 18 Pro simulator (iOS 27.2) with a Debug build, plus the 
 
 Independent review (read-only, brief §24): accepted the island removal within the stated evidence. Accepted the data-safety fixes on two conditions, unbounded Canvas storage (F1) and copy that didn't match behavior (F2), and both are addressed above. Lower findings were also addressed: fixed sample IDs, a safe undo, and a documented note that the inset environment's bottom includes the keyboard. Left open: corrupt data gets a backup but no visible notice or recovery screen (P3), and the status glyphs are still fabricated (P1, unchanged from the baseline).
 
+### M2 — truthfulness pass (v0.2.0)
+
+Simulator only (iPhone 18 Pro, iOS 27.2). The build had no Swift warnings, and the 13 calculator checks passed. This milestone had no independent review.
+
+| Finding | Status | Evidence |
+|---|---|---|
+| Fabricated status glyphs and Settings battery facts (P1) | Fixed: `DeviceStatus` (NWPathMonitor and UIDevice). Values iOS doesn't provide are omitted. | Status bar shows Wi-Fi only on the simulator, which reports no battery level. The cellular bars are gone. |
+| Search does nothing (P1) | Fixed: a search sheet for apps and notes | Searching "aud" found the Claude app and the user note. Tapping the note opened Notes. |
+| Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 36 apps | Seen in Weather and Calendar. |
+| Calendar fixed to July 2026 (P1) | Fixed: real month and today, with month navigation | Captured November 2026 with Tuesday the 3rd as today. |
+| Mail "Send", Phone keypad call, Gmail → YouTube (P1) | Fixed: `mailto:`, `tel:` and per-app handoffs | Source only. Handoffs need a physical device. |
+| Switcher, Tips and Weather copy mismatches, and the AI "Connected" label (P1/P2) | Fixed (copy) | Source, plus the Weather capture. |
+| Forced 1.25 s boot delay (P2) | Removed | The lock screen follows the first frame. |
+
 New observation: the real iOS home indicator sometimes shows below the app's own bottom bar (seen in Reminders). That's already part of the P1 "custom home indicator" finding.
 
 ## Audit health score
