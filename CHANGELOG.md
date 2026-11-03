@@ -11,6 +11,7 @@ The first release of the Swift UI overhaul (formerly Indica OS). It fixes data l
 - Canvas drawings are saved, and each stroke keeps its own color. Clear asks for confirmation.
 - The app no longer draws its own Dynamic Island next to the real camera cutout. That overlapped the cutout on iPhone 18 Pro and was painted below the notch on iPhone 17e. The status region now follows the device's safe area.
 - The status bar no longer shows fake full signal or a fixed 100% battery. It shows the real network type and battery level when iOS provides them. Settings no longer invents battery health, cycle count or battery percentage.
+- Settings › About, Storage, Software Update, Wi-Fi and Cellular no longer invent anything: the model name, serial number, capacity, per-app sizes, network name, carrier, data usage and "up to date" status. They now show the app version, iOS version, real device storage, Swift UI's own data size and the active connection. Where iOS doesn't share a value, they say so.
 - The mandatory 1.25-second boot delay is removed.
 - "Open Gmail" opened YouTube. Each app now opens its own official app.
 - Mail's "Send" only closed the sheet. "Open in Mail" now hands the draft to the system mail app.
