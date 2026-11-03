@@ -18,6 +18,7 @@ struct SystemShell: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
+            .environment(\.shellSafeAreaInsets, proxy.safeAreaInsets)
             .ignoresSafeArea()
             .contentShape(Rectangle())
             .simultaneousGesture(systemGesture(in: proxy.size))
@@ -228,9 +229,27 @@ struct IndicaWallpaper: View {
     }
 }
 
+private struct ShellSafeAreaInsetsKey: EnvironmentKey {
+    static let defaultValue = EdgeInsets()
+}
+
+extension EnvironmentValues {
+    /// The device's real safe-area insets, captured before the shell extends
+    /// itself edge to edge. Use them to keep content clear of the camera
+    /// housing and rounded corners instead of hard-coded offsets. `bottom`
+    /// grows to the keyboard height while the keyboard is visible.
+    var shellSafeAreaInsets: EdgeInsets {
+        get { self[ShellSafeAreaInsetsKey.self] }
+        set { self[ShellSafeAreaInsetsKey.self] = newValue }
+    }
+}
+
+/// Occupies the device's top safe-area region. The camera housing (notch or
+/// Dynamic Island) is physical, so the bar leaves its centre empty rather than
+/// drawing a second one.
 struct SystemStatusBar: View {
+    @Environment(\.shellSafeAreaInsets) private var safeAreaInsets
     var foreground: Color = .white
-    var showIsland = true
 
     var body: some View {
         HStack {
@@ -238,13 +257,6 @@ struct SystemStatusBar: View {
                 Text(context.date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)))
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .monospacedDigit()
-            }
-
-            Spacer()
-
-            if showIsland {
-                DynamicIslandControl()
-                    .zIndex(30)
             }
 
             Spacer()
@@ -258,190 +270,7 @@ struct SystemStatusBar: View {
         }
         .foregroundStyle(foreground)
         .padding(.horizontal, 22)
-        .frame(height: 58)
-        .padding(.top, 5)
-    }
-}
-
-private struct DynamicIslandControl: View {
-    @EnvironmentObject private var system: IndicaSystem
-    @State private var isExpanded = false
-    @State private var isPointerInside = false
-
-    private var activeTitle: String {
-        switch system.phase {
-        case .app(let app):
-            app.name
-        case .locked:
-            "Indica Locked"
-        case .switcher:
-            "App Switcher"
-        case .booting, .home:
-            "Indica OS"
-        }
-    }
-
-    var body: some View {
-        Color.clear
-            .frame(width: 116, height: 34)
-            .overlay {
-                ZStack {
-                    RoundedRectangle(
-                        cornerRadius: isExpanded ? 27 : 18,
-                        style: .continuous
-                    )
-                    .fill(Color.black)
-                    .overlay {
-                        RoundedRectangle(
-                            cornerRadius: isExpanded ? 27 : 18,
-                            style: .continuous
-                        )
-                        .stroke(.white.opacity(isExpanded ? 0.10 : 0.035), lineWidth: 0.65)
-                    }
-                    .shadow(
-                        color: .black.opacity(isExpanded ? 0.34 : 0.10),
-                        radius: isExpanded ? 18 : 5,
-                        y: isExpanded ? 10 : 2
-                    )
-
-                    if isExpanded {
-                        expandedContent
-                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                    } else {
-                        compactContent
-                            .transition(.opacity)
-                    }
-                }
-                .frame(
-                    width: isExpanded ? 270 : 116,
-                    height: isExpanded ? 88 : 34
-                )
-                .offset(y: isExpanded ? 27 : 0)
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                HapticEngine.play(.medium, enabled: system.hapticsEnabled)
-                withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) {
-                    isExpanded.toggle()
-                }
-            }
-            .onLongPressGesture(minimumDuration: 0.42) {
-                HapticEngine.play(.rigid, enabled: system.hapticsEnabled)
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.80)) {
-                    isExpanded = true
-                }
-            }
-            .onHover { hovering in
-                isPointerInside = hovering
-                if hovering {
-                    guard !isExpanded else { return }
-                    HapticEngine.play(.selection, enabled: system.hapticsEnabled)
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
-                        isExpanded = true
-                    }
-                } else {
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(420))
-                        guard !isPointerInside else { return }
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) {
-                            isExpanded = false
-                        }
-                    }
-                }
-            }
-            .hoverEffect(.highlight)
-            .accessibilityLabel("Dynamic Island")
-            .accessibilityHint("Tap or press and hold to expand")
-            .accessibilityAddTraits(.isButton)
-    }
-
-    private var compactContent: some View {
-        HStack(spacing: 8) {
-            if isPointerInside {
-                Image(systemName: "waveform")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: 0xC6A17E))
-                Text("Indica")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-            } else {
-                Spacer(minLength: 0)
-                Capsule()
-                    .fill(Color(hex: 0x17191E))
-                    .frame(width: 42, height: 8)
-                Spacer(minLength: 0)
-                Circle()
-                    .fill(Color(hex: 0x15161A))
-                    .frame(width: 11, height: 11)
-                    .overlay {
-                        Circle()
-                            .fill(Color(hex: 0x26355E))
-                            .frame(width: 4, height: 4)
-                    }
-            }
-        }
-        .padding(.horizontal, 9)
-    }
-
-    private var expandedContent: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 11) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: 0xD7B18E), Color(hex: 0x504239)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    Image(systemName: "waveform")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.black)
-                }
-                .frame(width: 37, height: 37)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(activeTitle)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    Text("System activity")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.58))
-                }
-
-                Spacer()
-
-                Text("LIVE")
-                    .font(.system(size: 8, weight: .black))
-                    .tracking(0.7)
-                    .foregroundStyle(Color(hex: 0xD7B18E))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 4)
-                    .background(Color(hex: 0xD7B18E).opacity(0.12), in: Capsule())
-            }
-
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.12))
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: 0xD7B18E), Color(hex: 0x7A6AC6)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: proxy.size.width * 0.64)
-                }
-            }
-            .frame(height: 3)
-        }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 12)
+        .frame(height: max(safeAreaInsets.top, 24))
     }
 }
 
@@ -1236,11 +1065,14 @@ private struct AppHost: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                SystemStatusBar(foreground: .primary)
-
                 BuiltInAppView(app: app)
                     .environmentObject(system)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // A real top inset lets navigation bars extend their
+                    // background beneath the status region, as on iOS.
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        SystemStatusBar(foreground: .primary)
+                    }
 
                 HybridAppNavigationBar()
             }

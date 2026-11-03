@@ -1217,7 +1217,13 @@ private struct NoteEditor: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        if let original = system.notes.first(where: { $0.id == note.id }),
+                           original.title == note.title, original.body == note.body {
+                            dismiss()
+                            return
+                        }
                         note.modified = .now
+                        note.isSample = false
                         if let index = system.notes.firstIndex(where: { $0.id == note.id }) {
                             system.notes[index] = note
                         } else {

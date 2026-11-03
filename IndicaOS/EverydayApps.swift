@@ -1150,59 +1150,91 @@ private struct TipsApp: View {
 }
 
 private struct CanvasApp: View {
-    @State private var lines: [[CGPoint]] = []
+    @EnvironmentObject private var system: IndicaSystem
     @State private var currentLine: [CGPoint] = []
-    @State private var color: Color = .indigo
+    @State private var ink: CanvasInk = .indigo
+    @State private var confirmingClear = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 Canvas { context, _ in
-                    for line in lines + [currentLine] where line.count > 1 {
+                    let inProgress = CanvasStroke(points: currentLine, color: ink)
+                    for stroke in system.canvasStrokes + [inProgress] where stroke.points.count > 1 {
                         var path = Path()
-                        path.move(to: line[0])
-                        for point in line.dropFirst() { path.addLine(to: point) }
-                        context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                        path.move(to: stroke.points[0])
+                        for point in stroke.points.dropFirst() { path.addLine(to: point) }
+                        context.stroke(
+                            path,
+                            with: .color(stroke.color.color),
+                            style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
+                        )
                     }
                 }
                 .background(Color(hex: 0xF8F4EC))
                 .gesture(
                     DragGesture(minimumDistance: 0)
-                        .onChanged { currentLine.append($0.location) }
+                        .onChanged { value in
+                            // Skip sub-2pt movement: no visible change, much smaller saves.
+                            if let last = currentLine.last,
+                               hypot(value.location.x - last.x, value.location.y - last.y) < 2 {
+                                return
+                            }
+                            currentLine.append(value.location)
+                        }
                         .onEnded { _ in
-                            lines.append(currentLine)
+                            if currentLine.count > 1 {
+                                system.canvasStrokes.append(CanvasStroke(points: currentLine, color: ink))
+                            }
                             currentLine = []
                         }
                 )
+                .accessibilityLabel("Drawing area")
+                .accessibilityValue("\(system.canvasStrokes.count) strokes")
 
                 HStack(spacing: 20) {
-                    ForEach([Color.indigo, .pink, .orange, .black], id: \.description) { item in
-                        Button { color = item } label: {
+                    ForEach(CanvasInk.allCases) { item in
+                        Button { ink = item } label: {
                             Circle()
-                                .fill(item)
+                                .fill(item.color)
                                 .frame(width: 29, height: 29)
                                 .overlay {
-                                    if color == item { Circle().stroke(.primary, lineWidth: 3).padding(-4) }
+                                    if ink == item { Circle().stroke(.primary, lineWidth: 3).padding(-4) }
                                 }
+                                .frame(width: 44, height: 44)
                         }
+                        .accessibilityLabel(item.name)
+                        .accessibilityAddTraits(ink == item ? .isSelected : [])
                     }
                     Spacer()
-                    Button { lines.removeLast() } label: { Image(systemName: "arrow.uturn.backward") }
-                        .disabled(lines.isEmpty)
-                    Button(role: .destructive) { lines.removeAll() } label: { Image(systemName: "trash") }
+                    Button { _ = system.canvasStrokes.popLast() } label: { Image(systemName: "arrow.uturn.backward") }
+                        .disabled(system.canvasStrokes.isEmpty)
+                        .accessibilityLabel("Undo last stroke")
+                    Button(role: .destructive) { confirmingClear = true } label: { Image(systemName: "trash") }
+                        .disabled(system.canvasStrokes.isEmpty)
+                        .accessibilityLabel("Clear drawing")
                 }
                 .padding()
                 .background(.bar)
             }
             .navigationTitle("Canvas")
             .navigationBarTitleDisplayMode(.inline)
+            .confirmationDialog("Clear this drawing?", isPresented: $confirmingClear, titleVisibility: .visible) {
+                Button("Clear Drawing", role: .destructive) {
+                    system.canvasStrokes.removeAll()
+                }
+            }
         }
     }
 }
 
 private struct JournalApp: View {
+    @EnvironmentObject private var system: IndicaSystem
     @State private var text = ""
-    @State private var entries = ["Today I started rebuilding Indica OS as a complete interactive system."]
+
+    private var trimmedText: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         NavigationStack {
@@ -1211,22 +1243,22 @@ private struct JournalApp: View {
                     TextField("What’s on your mind?", text: $text, axis: .vertical)
                         .lineLimit(3...7)
                     Button("Save Entry") {
-                        guard !text.isEmpty else { return }
-                        entries.insert(text, at: 0)
+                        guard !trimmedText.isEmpty else { return }
+                        system.journalEntries.insert(JournalEntry(text: trimmedText), at: 0)
                         text = ""
                     }
-                    .disabled(text.isEmpty)
+                    .disabled(trimmedText.isEmpty)
                 }
                 Section("Recent") {
-                    ForEach(entries, id: \.self) { entry in
+                    ForEach(system.journalEntries) { entry in
                         VStack(alignment: .leading, spacing: 7) {
-                            Text(entry)
-                            Text("July 17, 2026")
+                            Text(entry.text)
+                            Text(entry.created, format: .dateTime.month(.wide).day().year())
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .onDelete { entries.remove(atOffsets: $0) }
+                    .onDelete { system.journalEntries.remove(atOffsets: $0) }
                 }
             }
             .navigationTitle("Journal")

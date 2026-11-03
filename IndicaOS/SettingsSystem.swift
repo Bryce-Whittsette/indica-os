@@ -1309,11 +1309,11 @@ private struct ResetSettingsView: View {
                 Button("Reset All Settings") {
                     showingResetSettings = true
                 }
-                Button("Erase Local Demo Content", role: .destructive) {
+                Button("Remove Sample Content", role: .destructive) {
                     showingEraseContent = true
                 }
             } footer: {
-                Text("Reset All Settings keeps notes, messages, reminders, and account credentials. Erasing demo content resets only Indica’s local sample content.")
+                Text("Reset All Settings keeps notes, messages, reminders, journal entries, drawings, and account credentials. Remove Sample Content deletes the example notes, reminders, messages, and journal entry included with the app, even if you checked one off, and clears the simulated camera captures. Notes you edited and anything you added yourself are kept.")
             }
         }
         .navigationTitle("Transfer or Reset")
@@ -1322,10 +1322,16 @@ private struct ResetSettingsView: View {
                 system.resetSystemSettings()
             }
         }
-        .confirmationDialog("Erase local demo content?", isPresented: $showingEraseContent, titleVisibility: .visible) {
-            Button("Erase Demo Content", role: .destructive) {
-                system.resetDemoData()
+        .confirmationDialog(
+            "Remove sample content?",
+            isPresented: $showingEraseContent,
+            titleVisibility: .visible
+        ) {
+            Button("Remove Sample Content", role: .destructive) {
+                system.removeSampleContent()
             }
+        } message: {
+            Text("Simulated camera captures are cleared too. Notes, reminders, messages, and journal entries you added, notes you edited, and your drawings are not affected.")
         }
     }
 }
