@@ -358,6 +358,18 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Apps that show sample data or simulate results instead of doing the
+    /// real task. See docs/audit/app-inventory.md for each entry's status.
+    var isConceptDemo: Bool {
+        switch self {
+        case .notes, .reminders, .calculator, .tips, .journal, .canvas, .settings, .accounts,
+             .chatGPT, .claude, .spotify, .youtube, .gmail, .outlook, .notion, .discord, .telegram:
+            false
+        default:
+            true
+        }
+    }
+
     var category: AppCategory {
         switch self {
         case .phone, .messages, .mail, .contacts, .videoCall, .gmail, .outlook, .discord, .telegram:
