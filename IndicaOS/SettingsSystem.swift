@@ -307,8 +307,7 @@ private struct SettingsConnectionsView: View {
                     .notion,
                     .discord,
                     .telegram,
-                    .openAI,
-                    .anthropic
+                    .openAI
                 ]) { service in
                     serviceLink(service)
                 }

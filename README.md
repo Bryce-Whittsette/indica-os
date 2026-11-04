@@ -1,6 +1,6 @@
 # Swift UI
 
-*Formerly Indica OS.* A native iPhone app that hosts a complete phone-interface environment: lock screen, launcher, search, app switching, notification and control panels, settings, and 50 embedded apps.
+*Formerly Indica OS.* A native iPhone app that hosts a complete phone-interface environment: lock screen, launcher, search, app switching, notification and control panels, settings, and 49 embedded apps.
 
 Swift UI runs inside an ordinary iOS application. It does not replace the operating system. Some apps store your data locally, some connect to external services, and others are concept demos that use sample data. Concept demos are labeled **Concept demo · sample data** on screen, and [docs/audit/app-inventory.md](docs/audit/app-inventory.md) lists the status of every app.
 
@@ -52,7 +52,7 @@ The demo password vault has no real authentication and accepts no real secrets. 
 
 Spotify requires your own developer client ID. Configure it in Settings → Developer Integrations and register `indicaos://oauth/spotify` as the redirect URI. Account eligibility and developer app access are controlled by Spotify. Tokens remain in the device Keychain.
 
-OpenAI and Anthropic screens use developer API credentials and configurable model identifiers. Consumer subscriptions and chat histories are separate. Keys must be entered at runtime; none belong in this repository. API calls may incur provider charges.
+The OpenAI assistant uses developer API credentials and a configurable model identifier. Consumer subscriptions and chat histories are separate. Keys must be entered at runtime; none belong in this repository. API calls may incur provider charges.
 
 Disconnecting removes the corresponding local credentials. Network flows have not been exercised against live accounts in this release review.
 

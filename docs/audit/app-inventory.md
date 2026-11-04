@@ -8,12 +8,12 @@ Evidence levels: entries come from a static source read (cited `file:line`). Ite
 
 ## Summary
 
-Catalog entries: **50** (matches `BuiltInApp`, `IndicaOS/SystemModels.swift:141`).
+Retained catalog entries: **49**. Removed integrations are excluded from this inventory. Classifications and line citations below describe the baseline audit; later fixes are recorded in the changelog.
 
 | Classification today | Apps |
 |---|---|
 | Operational (local) | 4 |
-| Provider integration (code present, unverified) | 4 |
+| Provider integration (code present, unverified) | 3 |
 | External handoff | 6 |
 | Concept demo | 36 |
 
@@ -59,10 +59,9 @@ Catalog entries: **50** (matches `BuiltInApp`, `IndicaOS/SystemModels.swift:141`
 | Watch | Concept demo | 0 | 2 | 2 | 1 |
 | Video | Concept demo | 0 | 2 | 2 | 1 |
 | Settings | Concept demo | 0 | 7 | 4 | 1 |
-| Connections | Provider integration (code present, unverified) | 4 | 5 | 3 | 1 |
-| ChatGPT | Provider integration (code present, unverified) | 4 | 2 | 6 | 1 |
-| Claude | Provider integration (code present, unverified) | 4 | 2 | 6 | 1 |
-| Spotify | Provider integration (code present, unverified) | 4 | 2 | 4 | 1 |
+| Connections | Provider integration (code present, unverified) | 3 | 5 | 3 | 1 |
+| ChatGPT | Provider integration (code present, unverified) | 3 | 2 | 6 | 1 |
+| Spotify | Provider integration (code present, unverified) | 3 | 2 | 4 | 1 |
 | YouTube | External handoff | 0 | 2 | 1 | 1 |
 | Gmail | External handoff | 0 | 2 | 1 | 0 |
 | Outlook | External handoff | 0 | 1 | 1 | 1 |
@@ -71,7 +70,6 @@ Catalog entries: **50** (matches `BuiltInApp`, `IndicaOS/SystemModels.swift:141`
 | Telegram | External handoff | 0 | 1 | 0 | 1 |
 | **Total** | | **4** | **128** | **110** | **39** |
 
-ChatGPT and Claude share one view and one detail block; their defects are counted once, under Claude.
 
 ---
 
@@ -754,20 +752,20 @@ Facts that apply to every app below (stated once, referenced as "G-n"):
 
 ---
 
-## Audit apps-c: Settings, Connections, ChatGPT, Claude, Spotify, YouTube, Notion, Discord, Telegram, Gmail, Outlook
+## Audit apps-c: Settings, Connections, ChatGPT, Spotify, YouTube, Notion, Discord, Telegram, Gmail, Outlook
 
 Scope: `IndicaOS/SettingsSystem.swift`, `IndicaOS/Connections.swift`, `IndicaOS/Info.plist`, plus `SystemModels.swift`, `SystemShell.swift` and `ContentView.swift` where they supply state. Read-only static audit. Nothing was built, run, or sent over the network. Every provider flow below is unexercised against a live account, and anything that needs a live call is marked "unverified".
 
-Paths are relative to `IndicaOS/`. Routing is in `CoreApps.swift:64-70` (`.accounts` -> `ConnectionsApp`; `.chatGPT, .claude` -> `AIAssistantApp`; `.spotify .youtube .notion .discord .telegram .gmail .outlook` -> `ConnectedServiceApp`; `.settings` -> `SettingsApp` -> `IndicaSettingsApp`, `CoreApps.swift:1426-1429`).
+Paths are relative to `IndicaOS/`. Routing is in `CoreApps.swift:64-70` (`.accounts` -> `ConnectionsApp`; `.chatGPT` -> `AIAssistantApp`; `.spotify .youtube .notion .discord .telegram .gmail .outlook` -> `ConnectedServiceApp`; `.settings` -> `SettingsApp` -> `IndicaSettingsApp`, `CoreApps.swift:1426-1429`).
 
 ## Cross-cutting findings (affect several apps)
 
 - **There is no brief §11 state model.** `ConnectionStore.isConnected` (`Connections.swift:341-361`) returns one Bool. `ConnectionStatusPill` (`Connections.swift:1087-1102`) shows only "Connected" or "Not connected". The states the brief requires are not modelled: available, permission requested/granted, credentials configured, authenticated, data verified, stale, disconnected, unavailable.
   - Apple: tapping "Enable Permission Center" writes an account record, so the app shows "Connected" with no permission requested (`Connections.swift:404-411`, `:1024-1028`, `:356-357`).
-  - OpenAI/Anthropic: saving any string of 12 or more characters shows "Connected", with no validation call (`Connections.swift:376-387`, `:352-353`). That is the exact "saving a key = connected" anti-pattern.
+  - OpenAI: saving any string of 12 or more characters shows "Connected", with no validation call (`Connections.swift:376-387`, `:352-353`). That is the exact "saving a key = connected" anti-pattern.
   - Spotify: "Connected" needs a profile record plus an access token in Keychain (`:350`, `:354-355`). Token expiry and refresh failure are not reflected. A failed refresh leaves the green check (`:567-592`).
-- **Only 4 of 9 `ConnectedService` cases can ever reach "connected".**
-  - Those are `apple`, `spotify`, `openAI` and `anthropic`.
+- **Only 3 of 8 retained `ConnectedService` cases can ever reach "connected".**
+  - Those are `apple`, `spotify` and `openAI`.
   - `google`, `microsoft`, `notion` and `discord` only offer "Add Developer Configuration", which saves a client ID that nothing consumes (`Connections.swift:1071-1076`, `:1104-1152`; `setClientID` at `:371-374`).
   - `telegram` only opens the official app (`:1077-1082`).
   - No account record is ever written for those five, so YouTube, Gmail, Outlook, Notion, Discord and Telegram are effectively External handoffs. The UI presents them as pending connections ("Connect Your Account", "Set Up Connection", `Connections.swift:1337-1352`) and lists capabilities with checkmarks that do not exist (`:1363-1369`, `:108-127`).
@@ -829,11 +827,11 @@ Paths are relative to `IndicaOS/`. Routing is in `CoreApps.swift:64-70` (`.accou
 ---
 
 ### Connections — `ConnectionsApp` (`Connections.swift:794`; BuiltInApp `.accounts`)
-- **Classification (current):** Provider integration (code present, unverified), hub only. Spotify OAuth and the OpenAI/Anthropic BYO-key flows are implemented. The other rows are non-functional configuration or handoff, and the Apple row is fake.
+- **Classification (current):** Provider integration (code present, unverified), hub only. Spotify OAuth and the OpenAI BYO-key flow is implemented. The other rows are non-functional configuration or handoff, and the Apple row is fake.
 - **Purpose / primary task:** One place to see provider status, connect, and disconnect.
 - **Current behavior:**
   - Summary card "Indica Account Center / N services ready / Private by default" (`:858-895`).
-  - "On this iPhone" row (Apple) (`:806-812`); "Daily Apps": Spotify, Google, Microsoft, Notion, Discord, Telegram (`:814-829`); "Developer Assistants": OpenAI and Anthropic (`:831-843`).
+  - "On this iPhone" row (Apple) (`:806-812`); "Daily Apps": Spotify, Google, Microsoft, Notion, Discord, Telegram (`:814-829`); "Developer Assistants": OpenAI (`:831-843`).
   - Each row leads to `ServiceConnectionDetail` (`:933-1085`): status pill, capability list, setup requirement, Connect/Disconnect, "Open Official App or Website".
   - Footer privacy claims (`:845-849`).
 - **Data source & persistence:**
@@ -843,7 +841,7 @@ Paths are relative to `IndicaOS/`. Routing is in `CoreApps.swift:64-70` (`.accou
 - **Permissions / cost:**
   - No iOS permission prompts.
   - Spotify needs a user-created Spotify developer client ID.
-  - OpenAI and Anthropic need a paid developer API key; the summary correctly says consumer subscriptions are separate (`:101-104`, `:145-148`).
+  - OpenAI needs a developer API key; the summary correctly says consumer subscriptions are separate (`:101-104`, `:145-148`).
 - **Defects:**
   - **P1** Single boolean "Connected" state (see cross-cutting).
   - **P1** Apple row: `markAppleServicesReady()` creates "This iPhone / Permission is requested feature by feature" (`:404-411`), so Apple shows "Connected" and counts as "ready" with nothing granted. The Disconnect button for `.apple` only deletes that fake record (`:389-402`).
@@ -864,43 +862,39 @@ Paths are relative to `IndicaOS/`. Routing is in `CoreApps.swift:64-70` (`.accou
 ---
 
 ### ChatGPT — `AIAssistantApp(app: .chatGPT)` (`Connections.swift:1384`)
-### Claude — `AIAssistantApp(app: .claude)` (`Connections.swift:1384`)
-*(One view serves both; the details below apply to both unless marked.)*
-- **Classification (current):** Provider integration (code present, unverified) (optional BYO developer API key; unexercised). Neither app offers an official-app handoff on its main screen.
+- **Classification (current):** Provider integration (code present, unverified) (optional BYO developer API key; unexercised). The app does not offer an official-app handoff on its main screen.
 - **Purpose / primary task:** In-app chat with the provider's model through the user's developer API key.
 - **Current behavior:**
   - Not connected: `setupRequired` screen with an "Add Developer API Key" link to the detail screen (`:1586-1623`).
   - Connected: chat UI with composer, "thinking" indicator, error banner, "new conversation" button, and a model settings sheet (`:1472-1531`, `:1625-1661`, `:1699-1749`).
-  - A canned greeting "Hey, I’m Claude inside Indica OS…" or "Hey, I’m your OpenAI assistant inside Indica OS…" is inserted as the first assistant message (`:1653-1660`) and is then sent to the API as history (`:1630`).
+  - A canned greeting "Hey, I’m your OpenAI assistant inside Indica OS…" is inserted as the first assistant message (`:1653-1660`) and is then sent to the API as history (`:1630`).
   - Conversation is `@State` only, so it is lost on app switch or relaunch; the settings sheet says so (`:1732`).
 - **Data source & persistence:**
-  - Key: Keychain `openAI.apiKey` / `anthropic.apiKey` (`:380`, `:548`).
-  - Model IDs: `@AppStorage("assistant.openAI.model")` and `("assistant.anthropic.model")` (`:1388-1389`).
+  - Key: Keychain `openAI.apiKey` (`:380`, `:548`).
+  - Model ID: `@AppStorage("assistant.openAI.model")` (`:1388-1389`).
   - No transcript persistence.
-- **Permissions / cost:** The user must have a paid developer API account. Developer billing is separate from consumer ChatGPT/Claude plans (stated at `:146`, `:148`, `:1731`). Core Swift UI use must not depend on this.
+- **Permissions / cost:** The user must have a paid developer API account. Developer billing is separate from consumer ChatGPT plans (stated at `:146`, `:148`, `:1731`). Core Swift UI use must not depend on this.
 - **Request format and defaults (verified against code; provider behavior unverified):**
   - **OpenAI** (`Connections.swift:634-673`): `POST https://api.openai.com/v1/responses`. Headers `Authorization: Bearer <key>` and `Content-Type: application/json`. Body `{model, instructions, input:[{role,content}], max_output_tokens:1200}`. Parses `output[].content[].text`, joined (`:664-669`). The format matches the Responses API shape, from memory only; the OpenAI docs were not consulted (no network).
-  - **Anthropic** (`:675-713`): `POST https://api.anthropic.com/v1/messages`. Headers `x-api-key`, `anthropic-version: 2023-06-01`, `Content-Type`. Body `{model, system, messages, max_tokens:1200}`. Parses `content[].text`. This matches the Messages API (checked against the bundled `claude-api` skill reference).
   - **Default model IDs, exact strings:**
     - OpenAI: `"gpt-5.6-luna"` (`:1388`, repeated in UI copy `:1716`). **Cannot be confirmed here and looks non-standard. Treat as unverified; the brief requires re-verification.**
-    - Anthropic: `"claude-haiku-4-5"` (`:1389`, copy `:1715`). This is a valid current ID per the bundled skill's model table (cached 2026-10-06). It is a prior generation; the table lists `claude-haiku-5-5` as the current Haiku. Re-verify with `GET /v1/models` rather than trusting a hard-coded default.
-  - **Timeouts and errors:** No explicit `timeoutInterval` on either request (`:640`, `:681`; only the Spotify refresh sets 30 s at `:573`), so the system default of 60 s applies. No streaming, retry, `Retry-After`, 401 or 429 handling. `validateAIResponse` returns the provider's `error.message` or the HTTP status text (`:715-726`). It also reads the Anthropic error shape because both use `error.message`.
+  - **Timeouts and errors:** No explicit `timeoutInterval` on the request (`:640`; only the Spotify refresh sets 30 s at `:573`), so the system default of 60 s applies. No streaming, retry, `Retry-After`, 401 or 429 handling. `validateAIResponse` returns the provider's `error.message` or the HTTP status text (`:715-726`).
   - **Key handling:** The key is read from the Keychain only at send time (`:548`) and placed in headers. No `print`, `NSLog`, `os_log` or `Logger` exists anywhere in `IndicaOS/*.swift`. Keys are not written to UserDefaults (explicitly stated at `:1172`; `ConnectedAccountRecord` stores only a static string, `:381-385`). Provider error messages shown in the UI can echo a masked key fragment (e.g. an OpenAI "incorrect API key" message), but only in the on-screen banner.
 - **Defects:**
   - **P1** Default OpenAI model `gpt-5.6-luna` is an unverified default that ships as the out-of-box choice and is displayed in the header (`:1540`). With an unrecognized default, first send fails with a provider error. The brief says not to preserve unverified defaults.
   - **P1** Misleading state: "Connected/lock" header (`:1546`) and the gate `store.isConnected(service)` (`:1421`) trust a saved string. A bad key is only discovered at first send.
-  - **P2** The canned greeting is sent as an `assistant` turn at the head of the history. Anthropic's history starts with an assistant message; whether the API accepts that is unverified. Strip it from outbound history for both providers.
+  - **P2** The canned greeting is sent as an `assistant` turn at the head of the history. Strip synthetic greetings from outbound history.
   - **P2** OpenAI Responses requests omit `store`. The API default is to retain responses server-side (unverified from memory), while the UI says history "stays in this app session" (`:1732`). Send `store:false` or disclose.
   - **P2** `max_output_tokens: 1200` is a fixed cap. With reasoning-capable OpenAI models the cap can be consumed before any `output_text` is produced. `status:"incomplete"` and `stop_reason:"max_tokens"` are not surfaced, so the user sees only "The assistant returned an empty response" (`:233-234`, `:671`, `:711`).
   - **P2** In-flight request is not cancelled by "New conversation" (`:1625-1661`, `:1636-1648`). A late reply is appended to the fresh conversation.
   - **P2** A failed send leaves the user's message in the transcript and clears the composer with no retry (`:1631-1634`, `:1645`).
-  - **P2** "Open API Key Dashboard" in Assistant Settings calls `openOfficialAppOrWebsite`, which tries `chatgpt://` / `claude://` first (`:1725-1727`, `:175-176`, `:528-538`). The label promises a web key dashboard and the action opens the consumer app. `claude://` and `chatgpt://` are unverified as registered schemes.
+  - **P2** "Open API Key Dashboard" in Assistant Settings calls `openOfficialAppOrWebsite`, which tries `chatgpt://` first (`:1725-1727`, `:175-176`, `:528-538`). The label promises a web key dashboard and the action opens the consumer app. `chatgpt://` is unverified as a registered scheme.
   - **P3** The model text field has no picker or validation (`:1709`). The composer and the settings sheet text carry the Indica brand (`:1538`, `:1657-1658`, `:645`, `:687`).
-- **Proposed release behavior:** Main entry point is an "Open ChatGPT / Open Claude" handoff, with a clear one-line note that official-app access is separate from developer API billing. The built-in chat stays as an optional "Bring your own API key" section.
+- **Proposed release behavior:** Main entry point is an "Open ChatGPT" handoff, with a clear one-line note that official-app access is separate from developer API billing. The built-in chat stays as an optional "Bring your own API key" section.
   - Re-verify default models against current provider docs, or fetch `/v1/models` after the key is saved and let the user pick. Never ship a hard-coded unverified default.
   - Set explicit timeouts, handle 401/429/incomplete states, drop the synthetic greeting from outbound history, set `store:false` (OpenAI), and cancel in-flight work on reset or disappear.
   - Gate the "Connected" label behind a successful test call.
-- **Completion check:** With no key saved, the app offers working "Open ChatGPT/Claude" buttons; with a valid key, the first message gets a real reply from a model chosen from a live list; with a bad key, the status says "Rejected" before anything is sent.
+- **Completion check:** With no key saved, the app offers working "Open ChatGPT" buttons; with a valid key, the first message gets a real reply from a model chosen from a live list; with a bad key, the status says "Rejected" before anything is sent.
 
 ---
 
@@ -1112,13 +1106,11 @@ All user-facing "Indica", "Indica OS" and "Swift OS" strings. "Swift OS" does no
 - `:125` "Indica assistant"
 - `:132` "Indica asks for each iPhone permission…"
 - `:645` OpenAI system prompt "assistant inside Indica OS"
-- `:687` Anthropic system prompt, same wording
 - `:879` "Indica Account Center"
 - `:968` "What Indica Can Use"
 - `:1172` "Indica stores the key…"
 - `:1342` "Indica can now use only the access you approved."
 - `:1538` "\(app.name) for Indica"
-- `:1657` "Claude inside Indica OS"
 - `:1658` "OpenAI assistant inside Indica OS"
 
 **Other files, outside this audit's scope (for the migration list)**
@@ -1137,18 +1129,18 @@ All user-facing "Indica", "Indica OS" and "Swift OS" strings. "Swift OS" does no
 **URL schemes and redirects**
 - `CFBundleURLSchemes`: `indicaos` and `com.indicaos.prototype` (`Info.plist:31-34`). No `onOpenURL` handler exists; `ASWebAuthenticationSession` captures the callback directly. `com.indicaos.prototype` is referenced only in copy text (`Connections.swift:136`), and whether any provider has it registered is unverified.
 - Spotify redirect `indicaos://oauth/spotify` (`Connections.swift:134,423,443,461-464`). Developer page shows `indicaos://oauth` and `indicaos://oauth/spotify` (`SettingsSystem.swift:1453-1454`). Users who registered this redirect at Spotify would break on a scheme rename.
-- Outbound deep links: `spotify://`, `youtube://` (used for Google and Gmail), `ms-outlook://`, `notion://`, `discord://`, `tg://`, `chatgpt://`, `claude://` (`Connections.swift:166-178`). `LSApplicationQueriesSchemes` is not declared; the code uses `open` with a web fallback, not `canOpenURL`. Whether `chatgpt://` and `claude://` are registered by those apps is unverified.
+- Outbound deep links: `spotify://`, `youtube://` (used for Google and Gmail), `ms-outlook://`, `notion://`, `discord://`, `tg://`, `chatgpt://` (`Connections.swift:166-178`). `LSApplicationQueriesSchemes` is not declared; the code uses `open` with a web fallback, not `canOpenURL`. Whether `chatgpt://` is registered by that app is unverified.
 - Internal `indica://start` (browser start page, `CoreApps.swift:582,691`).
 
 **Keychain**
 - Service `com.indicaos.prototype.credentials` (`Connections.swift:259`).
-- Accounts: `spotify.accessToken`, `spotify.refreshToken` (`:392-393`, `:479-481`); `openAI.apiKey`, `anthropic.apiKey` (`"\(rawValue).apiKey"`, `:353`, `:380`, `:396`).
+- Accounts: `spotify.accessToken`, `spotify.refreshToken` (`:392-393`, `:479-481`); `openAI.apiKey` (`"\(rawValue).apiKey"`, `:353`, `:380`, `:396`).
 - Accessibility: `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` on insert only (`:275`).
 
 **UserDefaults, written by the Connections code**
-- `connectedAccounts` (JSON `[String: ConnectedAccountRecord]`, keyed by `ConnectedService.rawValue`: `apple`, `spotify`, `google`, `microsoft`, `notion`, `discord`, `telegram`, `openAI`, `anthropic`) (`:324`, `:730`).
+- `connectedAccounts` (JSON `[String: ConnectedAccountRecord]`, keyed by `ConnectedService.rawValue`: `apple`, `spotify`, `google`, `microsoft`, `notion`, `discord`, `telegram`, `openAI`) (`:324`, `:730`).
 - `integrationClientIDs` (`:330`, `:735`).
-- `assistant.openAI.model` and `assistant.anthropic.model` (`:1388-1389`).
+- `assistant.openAI.model` (`:1388-1389`).
 
 **UserDefaults, `IndicaSystem`** (`SystemModels.swift:436-541, 571`, plus `notes`, `reminders`, `messages` via `save(key:)` at `:764-769`)
 - `appearance`, `wallpaper`, `accentStyle`, `iconAppearance`, `homeLayoutDensity`, `lockClockStyle`, `notificationPreviews`
@@ -1167,5 +1159,5 @@ All user-facing "Indica", "Indica OS" and "Swift OS" strings. "Swift OS" does no
 - `setTimeAutomatically` (`:1260`), `use24HourTime` (`:1261`), `indicaLanguage` (`:1279`), `indicaRegion` (`:1280`), `appCellularDefault` (`:1366`)
 
 **Launch arguments** (`SystemModels.swift:617-625`; `Connections.swift:344`)
-- `--control`, `--notifications`, `--home`, `--app=<rawValue>`; `--assistant-preview` (DEBUG only, forces OpenAI and Anthropic "connected" without a key).
+- `--control`, `--notifications`, `--home`, `--app=<rawValue>`; `--assistant-preview` (DEBUG only, forces OpenAI "connected" without a key).
 

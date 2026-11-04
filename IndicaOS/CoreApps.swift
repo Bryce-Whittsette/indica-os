@@ -64,7 +64,7 @@ struct BuiltInAppView: View {
             EverydayApp(app: app)
         case .accounts:
             ConnectionsApp()
-        case .chatGPT, .claude:
+        case .chatGPT:
             AIAssistantApp(app: app)
         case .spotify, .youtube, .notion, .discord, .telegram, .gmail, .outlook:
             ConnectedServiceApp(app: app)
