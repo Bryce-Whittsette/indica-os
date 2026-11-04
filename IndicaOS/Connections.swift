@@ -13,7 +13,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
     case discord
     case telegram
     case openAI
-    case anthropic
 
     var id: String { rawValue }
 
@@ -27,7 +26,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .discord: "Discord"
         case .telegram: "Telegram"
         case .openAI: "OpenAI API"
-        case .anthropic: "Anthropic API"
         }
     }
 
@@ -36,7 +34,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .apple: "Apple"
         case .microsoft: "Microsoft"
         case .openAI: "OpenAI"
-        case .anthropic: "Anthropic"
         default: name
         }
     }
@@ -51,7 +48,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .discord: "bubble.left.and.bubble.right.fill"
         case .telegram: "paperplane.fill"
         case .openAI: "sparkles"
-        case .anthropic: "sun.max.fill"
         }
     }
 
@@ -65,7 +61,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .discord: Color(hex: 0x697BF0)
         case .telegram: Color(hex: 0x34A9E8)
         case .openAI: Color(hex: 0x33A68C)
-        case .anthropic: Color(hex: 0xD68B5C)
         }
     }
 
@@ -78,7 +73,7 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .notion: "OAuth + secure backend"
         case .discord: "OAuth public client"
         case .telegram: "Telegram client authorization"
-        case .openAI, .anthropic: "Developer API key"
+        case .openAI: "Developer API key"
         }
     }
 
@@ -100,8 +95,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
             "A full personal account requires Telegram’s native client API and phone or QR authorization."
         case .openAI:
             "Developer API access for a Swift UI assistant. ChatGPT subscriptions and chat history are separate."
-        case .anthropic:
-            "Developer API access for a Claude-powered assistant. Claude subscriptions and chat history are separate."
         }
     }
 
@@ -121,7 +114,7 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
             ["Identity", "Servers", "Linked connections", "Open the Discord app"]
         case .telegram:
             ["Personal chats with native client setup", "Contacts", "Channels", "Open Telegram"]
-        case .openAI, .anthropic:
+        case .openAI:
             ["Private API credential in Keychain", "Swift UI assistant", "No access to consumer chat history"]
         }
     }
@@ -144,8 +137,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
             "Create a Telegram api_id and api_hash, then integrate TDLib before enabling personal chat login."
         case .openAI:
             "Use an API-platform key. A ChatGPT Plus or Pro subscription does not include API usage."
-        case .anthropic:
-            "Use an Anthropic Console API key. A Claude Pro subscription does not include API usage."
         }
     }
 
@@ -159,7 +150,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .discord: URL(string: "https://discord.com/app")!
         case .telegram: URL(string: "https://web.telegram.org")!
         case .openAI: URL(string: "https://platform.openai.com/api-keys")!
-        case .anthropic: URL(string: "https://console.anthropic.com/settings/keys")!
         }
     }
 
@@ -173,7 +163,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .discord: URL(string: "discord://")
         case .telegram: URL(string: "tg://")
         case .openAI: URL(string: "chatgpt://")
-        case .anthropic: URL(string: "claude://")
         }
     }
 
@@ -186,7 +175,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .discord: .discord
         case .telegram: .telegram
         case .chatGPT: .openAI
-        case .claude: .anthropic
         default: nil
         }
     }
@@ -342,14 +330,14 @@ final class ConnectionStore: ObservableObject {
 #if DEBUG
         if
             ProcessInfo.processInfo.arguments.contains("--assistant-preview"),
-            service == .openAI || service == .anthropic
+            service == .openAI
         {
             return true
         }
 #endif
         guard accounts[service.rawValue] != nil else { return false }
         switch service {
-        case .openAI, .anthropic:
+        case .openAI:
             return CredentialVault.load(account: "\(service.rawValue).apiKey") != nil
         case .spotify:
             return CredentialVault.load(account: "spotify.accessToken") != nil
@@ -374,7 +362,7 @@ final class ConnectionStore: ObservableObject {
     }
 
     func saveAPIKey(_ value: String, for service: ConnectedService) throws {
-        guard service == .openAI || service == .anthropic else { return }
+        guard service == .openAI else { return }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 12 else { throw ConnectionError.noCredential }
         try CredentialVault.save(trimmed, account: "\(service.rawValue).apiKey")
@@ -392,7 +380,7 @@ final class ConnectionStore: ObservableObject {
             CredentialVault.delete(account: "spotify.accessToken")
             CredentialVault.delete(account: "spotify.refreshToken")
             spotifyTracks = []
-        case .openAI, .anthropic:
+        case .openAI:
             CredentialVault.delete(account: "\(service.rawValue).apiKey")
         default:
             break
@@ -564,7 +552,7 @@ final class ConnectionStore: ObservableObject {
         service: ConnectedService,
         model: String
     ) async throws -> String {
-        guard service == .openAI || service == .anthropic else {
+        guard service == .openAI else {
             throw ConnectionError.apiRequestFailed("This provider is not an AI assistant.")
         }
         guard let apiKey = CredentialVault.load(account: "\(service.rawValue).apiKey") else {
@@ -576,14 +564,7 @@ final class ConnectionStore: ObservableObject {
             throw ConnectionError.apiRequestFailed("Choose a model in Assistant Settings.")
         }
 
-        switch service {
-        case .openAI:
-            return try await sendOpenAIMessage(history: history, model: cleanModel, apiKey: apiKey)
-        case .anthropic:
-            return try await sendAnthropicMessage(history: history, model: cleanModel, apiKey: apiKey)
-        default:
-            throw ConnectionError.apiRequestFailed("Unsupported provider.")
-        }
+        return try await sendOpenAIMessage(history: history, model: cleanModel, apiKey: apiKey)
     }
 
     private func refreshSpotifyToken() async throws -> String {
@@ -686,46 +667,6 @@ final class ConnectionStore: ObservableObject {
         let text = output
             .compactMap { $0["content"] as? [[String: Any]] }
             .flatMap { $0 }
-            .compactMap { $0["text"] as? String }
-            .joined(separator: "\n")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !text.isEmpty else { throw ConnectionError.emptyResponse }
-        return text
-    }
-
-    private func sendAnthropicMessage(
-        history: [AIConversationMessage],
-        model: String,
-        apiKey: String
-    ) async throws -> String {
-        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
-        request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: [
-            "model": model,
-            "system": "You are the helpful assistant inside Swift UI. Be clear, concise, and friendly.",
-            "messages": history.map { message in
-                [
-                    "role": message.role.rawValue,
-                    "content": message.text
-                ]
-            },
-            "max_tokens": 1200
-        ])
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        try validateAIResponse(data: data, response: response)
-        guard
-            let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let content = root["content"] as? [[String: Any]]
-        else {
-            throw ConnectionError.emptyResponse
-        }
-
-        let text = content
             .compactMap { $0["text"] as? String }
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -851,7 +792,7 @@ struct ConnectionsApp: View {
                 }
 
                 Section {
-                    ForEach([ConnectedService.openAI, .anthropic]) { service in
+                    ForEach([ConnectedService.openAI]) { service in
                         NavigationLink {
                             ServiceConnectionDetail(service: service)
                         } label: {
@@ -861,7 +802,7 @@ struct ConnectionsApp: View {
                 } header: {
                     Text("Developer Assistants")
                 } footer: {
-                    Text("Developer API access is separate from consumer ChatGPT and Claude subscriptions.")
+                    Text("Developer API access is separate from consumer ChatGPT subscriptions.")
                 }
 
                 Section("Privacy") {
@@ -1084,7 +1025,7 @@ struct ServiceConnectionDetail: View {
                 }
                 .font(.subheadline)
             }
-        case .openAI, .anthropic:
+        case .openAI:
             Button {
                 showingAPIKey = true
             } label: {
@@ -1113,7 +1054,7 @@ private struct ConnectionStatusPill: View {
     var body: some View {
         Label(
             store.isConnected(service)
-                ? (service == .openAI || service == .anthropic ? "Key saved" : "Connected")
+                ? (service == .openAI ? "Key saved" : "Connected")
                 : "Not connected",
             systemImage: store.isConnected(service) ? "checkmark.circle.fill" : "circle.dashed"
         )
@@ -1410,7 +1351,6 @@ struct AIAssistantApp: View {
     let app: BuiltInApp
 
     @AppStorage("assistant.openAI.model") private var openAIModel = "gpt-5.6-luna"
-    @AppStorage("assistant.anthropic.model") private var anthropicModel = "claude-haiku-4-5"
     @State private var messages: [AIConversationMessage] = []
     @State private var prompt = ""
     @State private var isSending = false
@@ -1418,23 +1358,17 @@ struct AIAssistantApp: View {
     @State private var showingAssistantSettings = false
     @FocusState private var composerFocused: Bool
 
-    private var service: ConnectedService {
-        app == .claude ? .anthropic : .openAI
-    }
+    private let service = ConnectedService.openAI
 
     private var model: String {
-        service == .anthropic ? anthropicModel : openAIModel
+        openAIModel
     }
 
     private var modelBinding: Binding<String> {
         Binding(
             get: { model },
             set: { newValue in
-                if service == .anthropic {
-                    anthropicModel = newValue
-                } else {
-                    openAIModel = newValue
-                }
+                openAIModel = newValue
             }
         )
     }
@@ -1677,9 +1611,7 @@ struct AIAssistantApp: View {
         messages = [
             AIConversationMessage(
                 role: .assistant,
-                text: service == .anthropic
-                    ? "Hey, I’m Claude inside Swift UI. What do you want to work on?"
-                    : "Hey, I’m your OpenAI assistant inside Swift UI. What can I help with?"
+                text: "Hey, I’m your OpenAI assistant inside Swift UI. What can I help with?"
             )
         ]
     }
@@ -1734,11 +1666,7 @@ private struct AssistantSettingsSheet: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
 
-                    Text(
-                        service == .anthropic
-                            ? "Default: claude-haiku-4-5. You can replace it with another model available to your Anthropic API account."
-                            : "Default: gpt-5.6-luna. You can replace it with another model available to your OpenAI API account."
-                    )
+                    Text("Default: gpt-5.6-luna. You can replace it with another model available to your OpenAI API account.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }

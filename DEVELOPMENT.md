@@ -35,8 +35,8 @@ A source parse, a build, a simulator check, a physical-device test and a live pr
 
 ## Design skills
 
-- `/impeccable` (`~/.claude/skills/impeccable`): use its native references (`reference/ios.md`, `reference/audit.native.md`, `reference/adapt.native.md`). Its `detect` command and browser live mode only inspect web UIs and do not validate this app.
-- `/apple-design` (`~/.claude/skills/apple-design`): its examples target the web. Apply the principles through native SwiftUI: immediate press feedback, commit on release, cancellation, continuous drag tracking, velocity-aware interruptible springs, and Reduce Motion, Reduce Transparency, Dynamic Type and VoiceOver support.
+- If Impeccable is installed, use its native references (`reference/ios.md`, `reference/audit.native.md`, `reference/adapt.native.md`). Its detector and browser live mode only inspect web UIs and do not validate this app.
+- Apple Design's examples target the web. Apply its principles through native SwiftUI: immediate press feedback, commit on release, cancellation, continuous drag tracking, velocity-aware interruptible springs, and Reduce Motion, Reduce Transparency, Dynamic Type and VoiceOver support. Locate optional tools in the current environment rather than relying on machine-specific paths.
 
 ## Git
 
