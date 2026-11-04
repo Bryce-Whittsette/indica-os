@@ -9,7 +9,7 @@ The visual redesign has not started yet, so the current look is the earlier prot
 <p>
   <img src="docs/images/v0.2.0/lock.png" alt="Lock screen with the time, three widgets and two notifications, beside the real camera cutout" width="200" />
   <img src="docs/images/v0.2.0/home.png" alt="Home screen with weather and calendar widgets, a grid of app icons, the Search pill and the dock" width="200" />
-  <img src="docs/images/v0.2.0/calendar.png" alt="Calendar showing November 2026 with today highlighted and two sample events" width="200" />
+  <img src="docs/images/v0.2.0/calendar.png" alt="Calendar at v0.2.0, showing November 2026 with today highlighted and two sample events" width="200" />
   <img src="docs/images/v0.2.0/weather.png" alt="Weather concept demo with the sample-data label above the bottom bar" width="200" />
 </p>
 
@@ -39,15 +39,14 @@ v0.2.0 was built with Xcode 27.2 and exercised on iPhone 18 Pro and iPhone 17e s
 | Local apps | Calendar, Clock, Files and Voice Memos work with real data and system features, saved on this iPhone |
 | Search | Finds apps and notes from the Search pill or the page-two search row |
 | Device status | Network type and battery level from public iOS APIs; values iOS doesn't share are not shown |
-| Calendar | Real current month and today; events are sample data and are not saved yet |
 | Handoffs | Mail drafts open in the system mail app, the keypad dials through the Phone app, and Gmail, YouTube and Outlook open their own apps |
 | Calculator | Tested immediate-execution arithmetic, decimal input, clear, sign, percentage, and division errors |
 | Spotify | PKCE sign-in, profile, top tracks, and one refresh/retry when an access token expires |
 | Assistant connections | Developer API request flows using credentials in the device Keychain |
 | Other service entries | Setup information and links where an integration is not implemented |
-| Demo apps | Sample data and simulated behavior for views such as wallet, health, devices, passwords, and voice memos |
+| Demo apps | Sample data and simulated behavior for views such as wallet, health, devices and passwords |
 
-The demo password vault has no real authentication and accepts no real secrets. Voice Memos demonstrates recording states and elapsed time without capturing microphone audio. Service permission declarations do not mean every related system feature is implemented.
+The demo password vault has no real authentication and accepts no real secrets. The app only declares the permissions it uses: the microphone for Voice Memos, plus the notifications prompt for Clock.
 
 ## Connections
 

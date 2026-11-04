@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -38,28 +40,8 @@
 	<string>public.app-category.lifestyle</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>Swift UI uses Apple Music access only when you connect your library and playback features.</string>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Swift UI uses calendar access to show and edit events inside the Calendar app.</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>Swift UI uses calendar access to show your events.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Swift UI uses the camera when you open the Camera app.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Swift UI uses contacts for calls, messages, mail, and contact cards.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Swift UI uses your location for weather, maps, and location-aware widgets.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Swift UI uses the microphone to record voice memos.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Swift UI saves photos that you capture or create.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Swift UI shows photos you choose to make available to the Photos app.</string>
-	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>Swift UI uses reminder access to show and update your reminders.</string>
-	<key>NSRemindersUsageDescription</key>
-	<string>Swift UI uses reminder access to show your reminders.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

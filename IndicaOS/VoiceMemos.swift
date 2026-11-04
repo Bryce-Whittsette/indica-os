@@ -134,7 +134,9 @@ final class VoiceMemoStore: NSObject, ObservableObject {
     /// button all end here, so nothing recorded is lost.
     func stopRecording() {
         guard let recorder, let fileName = currentFileName else { return }
-        let duration = recorder.currentTime
+        // `currentTime` is only valid while recording, and an interruption may already
+        // have stopped it, so the finished file decides the duration.
+        let timeAtStop = recorder.currentTime
         recorder.stop()
         self.recorder = nil
         currentFileName = nil
@@ -143,6 +145,8 @@ final class VoiceMemoStore: NSObject, ObservableObject {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
 
         let url = Self.folder.appendingPathComponent(fileName)
+        let fileDuration = (try? AVAudioPlayer(contentsOf: url))?.duration ?? 0
+        let duration = max(fileDuration, timeAtStop)
         guard duration >= 0.2 else {
             try? FileManager.default.removeItem(at: url)
             return
@@ -183,13 +187,14 @@ final class VoiceMemoStore: NSObject, ObservableObject {
         meter.elapsed = recorder.currentTime
     }
 
-    @objc private func handleInterruption(_ notification: Notification) {
+    /// This notification has no guaranteed thread, so it hops to the main actor.
+    @objc nonisolated private func handleInterruption(_ notification: Notification) {
         guard let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
               AVAudioSession.InterruptionType(rawValue: raw) == .began else { return }
-        MainActor.assumeIsolated {
-            stopRecording()
-            player?.pause()
-            if playingID != nil { isPaused = true }
+        Task { @MainActor in
+            self.stopRecording()
+            self.player?.pause()
+            if self.playingID != nil { self.isPaused = true }
         }
     }
 
@@ -227,9 +232,14 @@ final class VoiceMemoStore: NSObject, ObservableObject {
 
     func stopPlayback() {
         player?.stop()
+        let wasPlaying = player != nil
         player = nil
         playingID = nil
         isPaused = false
+        // Lets other apps' audio resume.
+        if wasPlaying {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 
     func progress(of memo: VoiceMemo) -> Double {

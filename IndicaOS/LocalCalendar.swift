@@ -290,6 +290,16 @@ private struct EventEditor: View {
             .onChange(of: draft.start) { oldStart, newStart in
                 // Moving the start keeps the event's length, as iOS does.
                 guard draft.end >= oldStart else { return }
+                if draft.isAllDay {
+                    // By calendar days: a day isn't always 24 hours long.
+                    let days = calendar.dateComponents(
+                        [.day],
+                        from: calendar.startOfDay(for: oldStart),
+                        to: calendar.startOfDay(for: draft.end)
+                    ).day ?? 0
+                    draft.end = calendar.date(byAdding: .day, value: days, to: newStart) ?? newStart
+                    return
+                }
                 draft.end = newStart.addingTimeInterval(draft.end.timeIntervalSince(oldStart))
             }
             .confirmationDialog("Delete this event?", isPresented: $confirmingDelete, titleVisibility: .visible) {

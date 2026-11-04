@@ -16,7 +16,7 @@
 - Pager physics and local logic checks (`Tests/PagerPhysicsTests.swift`, `Tests/LocalLogicTests.swift`), run in CI alongside the calculator checks.
 
 ### Changed
-- The app is now named **Swift UI** on the Home Screen, in permission prompts, in Settings, in sample content and in the assistant's prompts. Sample notes, messages and journal entries saved under the old name are updated once; anything you wrote is left alone. The bundle ID, URL scheme, Spotify callback and stored data keys are unchanged.
+- The app is now named **Swift UI** on the Home Screen, in the microphone prompt, in Settings, in sample content and in the assistant's prompts. Sample notes, messages and journal entries saved under the old name are updated once; anything you wrote is left alone. The bundle ID, URL scheme, Spotify callback and stored data keys are unchanged.
 - With Reduce Motion on, a released page changes in place instead of sliding.
 - The Home Screen weather widget says "Sample weather". It still shows a made-up forecast.
 - The first swipe from the top or bottom screen edge now asks to go to Swift UI's own gesture, and a second reaches iOS. This uses `defersSystemGestures` and hasn't been tested on a physical iPhone.
@@ -29,8 +29,8 @@
 - Typing into a new note and clearing it leaves nothing behind. Typing into an existing note and undoing it keeps its date and sample status.
 - The app switcher's cards can be dragged sideways reliably, and releasing a partial swipe no longer opens the app.
 - A swipe up on the lower part of a switcher card no longer also leaves the switcher.
-- Two quick flicks in the switcher close two cards, and closing an earlier card keeps the focused one in place.
-- A gesture interrupted by the system no longer leaves the Search pill or switcher stuck.
+- Two quick flicks in the switcher should close two cards, and closing an earlier card should keep the focused one in place. These come from source review and haven't been exercised.
+- A gesture interrupted by the system should no longer leave the Search pill, pager or switcher stuck. This also comes from source review and hasn't been exercised.
 - The Home indicator has a larger touch target.
 
 ### Stored data
@@ -43,6 +43,9 @@
 - With the keyboard up, the bottom-edge swipe can't start because that area belongs to the keyboard.
 - Switcher cards are still placeholders, not snapshots of the app.
 - Frame rate isn't established. On the iPhone 18 Pro simulator a settle drew about 7 to 10 frames, with the app's main thread mostly waiting on the simulator's renderer. It needs measuring on a physical iPhone.
+- Control Center's notification list still has sample Messages and Weather entries with no sample label.
+- A one-time alarm that goes off while Clock stays open keeps its switch on until you return to the app.
+- An unreadable Voice Memos index empties the list without a backup, and a crash mid-recording leaves a file that isn't listed.
 - Every keystroke in Notes re-encodes all notes. It hasn't been profiled with long notes on a device.
 
 ## v0.2.0 — 2026-11-03

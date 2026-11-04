@@ -644,7 +644,6 @@ final class IndicaSystem: ObservableObject {
     @Published var appHistory: [BuiltInApp] = []
     @Published var notifications: [SystemNotification] = [
         SystemNotification(app: .messages, title: "Maya", body: "The concept finally feels like a real phone.", date: .now),
-        SystemNotification(app: .calendar, title: "Design review", body: "Today at 2:30 PM", date: .now.addingTimeInterval(-900)),
         SystemNotification(app: .weather, title: "Rain later", body: "Showers are expected around 7 PM.", date: .now.addingTimeInterval(-1800))
     ]
     @Published var notes: [NoteItem] {

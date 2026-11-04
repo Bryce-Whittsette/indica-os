@@ -99,7 +99,7 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .telegram:
             "A full personal account requires Telegram’s native client API and phone or QR authorization."
         case .openAI:
-            "Developer API access for an Swift UI assistant. ChatGPT subscriptions and chat history are separate."
+            "Developer API access for a Swift UI assistant. ChatGPT subscriptions and chat history are separate."
         case .anthropic:
             "Developer API access for a Claude-powered assistant. Claude subscriptions and chat history are separate."
         }

@@ -62,9 +62,24 @@ final class ClockStore: ObservableObject {
     // MARK: Notifications
 
     /// Reads the current permission, which can change in Settings at any time.
+    /// Runs on opening Clock and returning to the app. With permission, it also
+    /// schedules anything that couldn't be scheduled while permission was off.
     func refresh() async {
         notifications = await center.notificationSettings().authorizationStatus
-        await turnOffFiredOneTimeAlarms()
+        guard notifications == .authorized || notifications == .provisional else { return }
+        let pending = Set(await center.pendingNotificationRequests().map(\.identifier))
+
+        if case .running = timer.state, !pending.contains(Self.timerNotificationID) {
+            scheduleTimerNotification()
+        }
+        for alarm in alarms where alarm.isOn {
+            if let fires = alarm.oneTimeFireDate, fires <= .now {
+                // A one-time alarm that has gone off turns its switch off.
+                setAlarm(alarm.id, isOn: false)
+            } else if !expectedIDs(for: alarm).allSatisfy(pending.contains) {
+                schedule(alarm)
+            }
+        }
     }
 
     /// Asks only when the person starts something that needs it.
@@ -116,8 +131,12 @@ final class ClockStore: ObservableObject {
             content.title = "Timer"
             content.body = "Your timer is done."
             content.sound = .default
+            // The person may have paused or cancelled while permission was being asked for.
+            guard case .running = timer.state else { return }
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, timer.remaining(at: .now)), repeats: false)
             try? await center.add(UNNotificationRequest(identifier: Self.timerNotificationID, content: content, trigger: trigger))
+            if case .running = timer.state { return }
+            center.removePendingNotificationRequests(withIdentifiers: [Self.timerNotificationID])
         }
     }
 
@@ -154,11 +173,25 @@ final class ClockStore: ObservableObject {
         (0...7).map { "alarm-\(alarmID.uuidString)-\($0)" }
     }
 
+    private func expectedIDs(for alarm: ClockAlarm) -> [String] {
+        let days = alarm.weekdays.isEmpty ? [0] : alarm.weekdays.sorted()
+        return days.map { "alarm-\(alarm.id.uuidString)-\($0)" }
+    }
+
+    private func isStillOn(_ id: UUID) -> Bool {
+        alarms.first { $0.id == id }?.isOn == true
+    }
+
     private func schedule(_ alarm: ClockAlarm) {
         center.removePendingNotificationRequests(withIdentifiers: notificationIDs(for: alarm.id))
+        if let index = alarms.firstIndex(where: { $0.id == alarm.id }) {
+            alarms[index].oneTimeFireDate = nil
+        }
         guard alarm.isOn else { return }
         Task {
             await ensureNotificationPermission()
+            // It may have been turned off or deleted while permission was being asked for.
+            guard isStillOn(alarm.id) else { return }
             let content = UNMutableNotificationContent()
             content.title = alarm.label.isEmpty ? "Alarm" : alarm.label
             content.body = "Alarm"
@@ -176,15 +209,14 @@ final class ClockStore: ObservableObject {
                 )
                 try? await center.add(request)
             }
-        }
-    }
-
-    /// A one-time alarm with nothing left pending has gone off, so its switch goes off too.
-    private func turnOffFiredOneTimeAlarms() async {
-        let pending = Set(await center.pendingNotificationRequests().map(\.identifier))
-        for alarm in alarms where alarm.isOn && alarm.weekdays.isEmpty {
-            if !pending.contains("alarm-\(alarm.id.uuidString)-0") {
-                setAlarm(alarm.id, isOn: false)
+            guard isStillOn(alarm.id) else {
+                center.removePendingNotificationRequests(withIdentifiers: notificationIDs(for: alarm.id))
+                return
+            }
+            let pending = Set(await center.pendingNotificationRequests().map(\.identifier))
+            if alarm.weekdays.isEmpty, pending.contains("alarm-\(alarm.id.uuidString)-0"),
+               let index = alarms.firstIndex(where: { $0.id == alarm.id }) {
+                alarms[index].oneTimeFireDate = alarm.nextFire(after: .now, calendar: .current)
             }
         }
     }
@@ -192,6 +224,7 @@ final class ClockStore: ObservableObject {
 
 struct ClockApp: View {
     @ObservedObject private var store = ClockStore.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tab = 0
 
     var body: some View {
@@ -216,6 +249,10 @@ struct ClockApp: View {
             .navigationTitle("Clock")
             .navigationBarTitleDisplayMode(.inline)
             .task { await store.refresh() }
+            // Permission may have changed in Settings, and an alarm may have gone off.
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { Task { await store.refresh() } }
+            }
         }
     }
 }
