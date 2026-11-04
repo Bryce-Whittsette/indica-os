@@ -337,6 +337,7 @@ private struct EventEditor: View {
                 if draft.existingID != nil {
                     Section {
                         Button("Delete Event", role: .destructive) { confirmingDelete = true }
+                        .foregroundStyle(.red)
                     }
                 }
             }

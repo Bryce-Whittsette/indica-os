@@ -728,7 +728,24 @@ final class IndicaSystem: ObservableObject {
         }
     }
 
-    let homePages: [[BuiltInApp]] = [
+    /// Apps taken off the Home Screen. They stay in Search and can be added back in Settings.
+    @Published var hiddenHomeApps: Set<BuiltInApp> = Set(
+        (UserDefaults.standard.stringArray(forKey: "hiddenHomeApps") ?? []).compactMap(BuiltInApp.init(rawValue:))
+    ) {
+        didSet { UserDefaults.standard.set(hiddenHomeApps.map(\.rawValue).sorted(), forKey: "hiddenHomeApps") }
+    }
+
+    /// Pages keep their place when emptied, so the page count and ruler stay stable.
+    var homePages: [[BuiltInApp]] {
+        allHomePages.map { page in page.filter { !hiddenHomeApps.contains($0) } }
+    }
+
+    /// In the order they appear on Home, for adding them back.
+    var hiddenHomeAppsInOrder: [BuiltInApp] {
+        allHomePages.flatMap { $0 }.filter { hiddenHomeApps.contains($0) }
+    }
+
+    private let allHomePages: [[BuiltInApp]] = [
         [.weather, .calendar, .photos, .camera, .mail, .maps, .clock, .notes,
          .reminders, .store, .health, .wallet, .home, .find, .music, .settings],
         [.browser, .contacts, .files, .calculator, .podcasts, .news, .books, .voiceMemos,
@@ -859,6 +876,7 @@ final class IndicaSystem: ObservableObject {
         appearance = .automatic
         wallpaper = .instrument
         accentStyle = .signal
+        hiddenHomeApps = []
         iconAppearance = .automatic
         homeLayoutDensity = .comfortable
         lockClockStyle = .classic

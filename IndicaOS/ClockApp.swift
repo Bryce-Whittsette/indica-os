@@ -519,6 +519,7 @@ private struct AlarmEditor: View {
                             store.delete(alarmID: alarm.id)
                             dismiss()
                         }
+                        .foregroundStyle(.red)
                     }
                 }
             }

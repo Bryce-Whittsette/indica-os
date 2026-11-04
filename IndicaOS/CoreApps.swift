@@ -915,6 +915,17 @@ private struct MapsApp: View {
 private struct WeatherApp: View {
     @State private var cityIndex = 0
 
+    private func hourLabel(hoursFromNow hours: Int) -> String {
+        let date = Calendar.current.date(byAdding: .hour, value: hours, to: .now) ?? .now
+        return date.formatted(.dateTime.hour())
+    }
+
+    private func weekdayLabel(daysFromToday days: Int) -> String {
+        let calendar = Calendar.current
+        let today = calendar.component(.weekday, from: .now) - 1
+        return calendar.shortWeekdaySymbols[(today + days) % 7]
+    }
+
     private let cities = [
         ("Brooklyn", 72, "Partly Cloudy", Color(hex: 0x3478CE), Color(hex: 0x73B7E8)),
         ("Los Angeles", 84, "Sunny", Color(hex: 0xE88548), Color(hex: 0xF6C164)),
@@ -950,7 +961,7 @@ private struct WeatherApp: View {
                     HStack {
                         ForEach(0..<5, id: \.self) { index in
                             VStack(spacing: 9) {
-                                Text(index == 0 ? "Now" : "\(index + 1) PM")
+                                Text(index == 0 ? "Now" : hourLabel(hoursFromNow: index))
                                     .font(.caption)
                                 Image(systemName: index > 2 ? "cloud.rain.fill" : "cloud.sun.fill")
                                     .symbolRenderingMode(.multicolor)
@@ -970,8 +981,10 @@ private struct WeatherApp: View {
                             .opacity(0.66)
                         ForEach(0..<7, id: \.self) { day in
                             HStack {
-                                Text(day == 0 ? "Today" : Calendar.current.weekdaySymbols[(day + 5) % 7])
-                                    .frame(width: 80, alignment: .leading)
+                                Text(day == 0 ? "Today" : weekdayLabel(daysFromToday: day))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                                    .frame(width: 56, alignment: .leading)
                                 Image(systemName: day % 3 == 2 ? "cloud.rain.fill" : "cloud.sun.fill")
                                     .symbolRenderingMode(.multicolor)
                                 Spacer()
@@ -1154,43 +1167,66 @@ private struct RemindersApp: View {
     @EnvironmentObject private var system: IndicaSystem
     @State private var newReminder = ""
 
+    private var trimmed: String {
+        newReminder.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func add() {
+        guard !trimmed.isEmpty else { return }
+        withAnimation {
+            system.reminders.append(ReminderItem(title: trimmed))
+            newReminder = ""
+        }
+    }
+
     var body: some View {
         NavigationStack {
             VStack {
                 HStack {
                     TextField("New reminder", text: $newReminder)
                         .textFieldStyle(.roundedBorder)
-                    Button("Add") {
-                        guard !newReminder.isEmpty else { return }
-                        withAnimation {
-                            system.reminders.append(ReminderItem(title: newReminder))
-                            newReminder = ""
-                        }
-                    }
-                    .fontWeight(.semibold)
+                        .submitLabel(.done)
+                        .onSubmit(add)
+                    Button("Add", action: add)
+                        .fontWeight(.semibold)
+                        .disabled(trimmed.isEmpty)
                 }
                 .padding()
 
-                List {
-                    Section("My List") {
-                        ForEach($system.reminders) { $reminder in
-                            HStack(spacing: 12) {
-                                Button {
-                                    reminder.isComplete.toggle()
-                                } label: {
-                                    Image(systemName: reminder.isComplete ? "checkmark.circle.fill" : "circle")
-                                        .font(.title3)
-                                        .foregroundStyle(reminder.isComplete ? .blue : .secondary)
+                if system.reminders.isEmpty {
+                    ContentUnavailableView(
+                        "No Reminders",
+                        systemImage: "checklist",
+                        description: Text("Type one above to add it.")
+                    )
+                    .frame(maxHeight: .infinity)
+                } else {
+                    List {
+                        Section("My List") {
+                            ForEach($system.reminders) { $reminder in
+                                HStack(spacing: 12) {
+                                    Button {
+                                        reminder.isComplete.toggle()
+                                    } label: {
+                                        Image(systemName: reminder.isComplete ? "checkmark.circle.fill" : "circle")
+                                            .font(.title3)
+                                            .foregroundStyle(reminder.isComplete ? .blue : .secondary)
+                                            .frame(minWidth: 44, minHeight: 44)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(reminder.isComplete ? "Mark not done" : "Mark done")
+                                    .accessibilityValue(reminder.title)
+                                    Text(reminder.title)
+                                        .strikethrough(reminder.isComplete)
+                                        .foregroundStyle(reminder.isComplete ? .secondary : .primary)
                                 }
-                                Text(reminder.title)
-                                    .strikethrough(reminder.isComplete)
-                                    .foregroundStyle(reminder.isComplete ? .secondary : .primary)
                             }
+                            .onDelete { system.reminders.remove(atOffsets: $0) }
                         }
-                        .onDelete { system.reminders.remove(atOffsets: $0) }
                     }
+                    .listStyle(.insetGrouped)
                 }
-                .listStyle(.insetGrouped)
             }
             .navigationTitle("Reminders")
         }
