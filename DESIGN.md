@@ -76,13 +76,16 @@ The earlier gradient wallpapers stay as a choice, and a saved choice is respecte
 - **Ledger:** the top of Home and the Lock Screen is a ruled two-cell strip with Up Next and the labeled sample weather.
 - **Ruled Calendar:** a hairline grid, with the selected day as an `ink` block with a signal underline.
 
+## Identity
+
+The owner selected the **Trace** mark with **The Space** wordmark on 2026-11-03. Masters, construction and usage rules are in `docs/brand`. In the app, use `BrandMark` and `BrandWordmark`.
+
 ## Voice
 
 Direct and exact. "Saved on this iPhone. Not synced with the iOS Calendar." "Nothing on this day."
 
 ## Not done yet
 
-- The logo and wordmark come next, as concepts for the owner to choose from (§6). Until then the old boot mark stays, and the shipped app icon is unchanged.
 - IBM Plex Mono isn't bundled.
 - Connections keeps its colored service tiles inside the screen, which aren't restyled. Clock, Files and Voice Memos are real but still use system styling.
 - The README screenshots still show v0.2.0.

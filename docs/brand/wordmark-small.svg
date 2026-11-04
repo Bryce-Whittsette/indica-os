@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="62" viewBox="0 0 256 62" role="img" aria-label="Swift UI">
+<title>Swift UI</title>
+<g fill="none" stroke="#16181A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M27 12.5H13.75a8.75 8.75 0 0 0 0 17.5H18.25a8.75 8.75 0 0 1 0 17.5H5"/>
+<path transform="translate(32 0)" d="M5 24.5L10.5 47.5L16 30L21.5 47.5L27 24.5"/>
+<path transform="translate(64 0)" d="M8 24.5H16V47.5M6 47.5H26"/>
+<path transform="translate(96 0)" d="M26 12.5H21a7 7 0 0 0-7 7V47.5M6 24.5H25M7 47.5H22"/>
+<path transform="translate(128 0)" d="M13 14V40.5a7 7 0 0 0 7 7H26M5 24.5H25"/>
+<path transform="translate(192 0)" d="M6 12.5V37.5a10 10 0 0 0 20 0V12.5"/>
+<path transform="translate(224 0)" d="M8 12.5H24M16 12.5V47.5M8 47.5H24"/>
+</g>
+<circle cx="80" cy="12.5" r="3.25" fill="#16181A"/>
+</svg>

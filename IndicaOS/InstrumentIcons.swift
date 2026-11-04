@@ -1,5 +1,42 @@
 import SwiftUI
 
+/// The Trace mark. Its masters and rules are in `docs/brand`. The line and dot are
+/// separate template layers, so each takes its own color.
+struct BrandMark: View {
+    var size: CGFloat = 48
+    var line: Color = Instrument.ink
+    var dot: Color = Instrument.signal
+
+    var body: some View {
+        ZStack {
+            Image("brand-mark-line").renderingMode(.template).resizable().foregroundStyle(line)
+            Image("brand-mark-dot").renderingMode(.template).resizable().foregroundStyle(dot)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The Swift UI wordmark, with the space measured by a bracket. Below 28 pt tall the
+/// bracket reads as an underscore, so it's dropped and the plain space remains.
+struct BrandWordmark: View {
+    var height: CGFloat = 40
+    var letters: Color = Instrument.ink
+    var space: Color = Instrument.signal
+
+    var body: some View {
+        ZStack {
+            Image("brand-wordmark-letters").renderingMode(.template).resizable().foregroundStyle(letters)
+            if height >= 28 {
+                Image("brand-wordmark-space").renderingMode(.template).resizable().foregroundStyle(space)
+            }
+        }
+        .frame(width: height * 256 / 62, height: height)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Swift UI")
+    }
+}
+
 extension BuiltInApp {
     /// A neutral letter for a third-party service, in place of an imitated logo.
     /// Replace one only with official assets whose usage terms have been confirmed.

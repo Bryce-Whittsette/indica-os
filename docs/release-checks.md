@@ -1,5 +1,15 @@
 # Release checks
 
+## Unreleased: Logo
+
+- [x] Build: the asset catalog compiles the mark and wordmark layers and three icon variants.
+- [x] Exports: the app icons, avatar and social preview are opaque PNGs at their stated sizes, read back with `sips`.
+- [x] Masters read by eye from 16 to 96 px in color, dark and one color. This caught the bracket reading as an underscore at small sizes, which set the 28 pt rule.
+- [x] Simulator, iPhone 18 Pro: the iOS Home Screen shows the new icon. The boot screen shows the mark and wordmark in light and dark, seen by holding it in a temporary build that wasn't committed. In normal use it leaves as soon as it appears, so a launch is mostly the plain ground color.
+- [ ] iOS's dark and tinted Home Screen icon styles, which need the system setting.
+- [ ] The icon on a physical iPhone.
+- [ ] A trademark search on the marks and the name. None has been run.
+
 ## Unreleased: Instrument
 
 Source-level, also in CI:
