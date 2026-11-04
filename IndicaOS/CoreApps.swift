@@ -962,7 +962,7 @@ private struct WeatherApp: View {
                         }
                     }
                     .padding(15)
-                    .liquidGlass(cornerRadius: 24, intensity: 0.75)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 15) {
                         Label("7-DAY FORECAST", systemImage: "calendar")
@@ -987,7 +987,7 @@ private struct WeatherApp: View {
                         }
                     }
                     .padding(16)
-                    .liquidGlass(cornerRadius: 24, intensity: 0.75)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
                 .padding(16)
                 .padding(.top, 24)

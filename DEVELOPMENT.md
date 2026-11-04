@@ -8,7 +8,7 @@ The Xcode project, scheme, source directory, bundle ID (`com.indicaos.prototype`
 
 - `docs/brief/master-brief.md` and `docs/brief/native-fidelity-addendum.md` are the owner's product, brand, engineering and release brief. They govern; do not reopen their settled decisions.
 - `PRODUCT.md` is the product record derived from the brief.
-- `DESIGN.md` will record the selected design system once the owner picks a brand direction. Until then, the current look is evidence of function, not a binding aesthetic.
+- `DESIGN.md` records the selected design system, Instrument, and what of it is built. Use its tokens on Swift UI's own surfaces, and leave apps that reproduce an iOS app in that app's look.
 - `README.md` and `docs/release-checks.md` describe implementation scope and verification status; update them as behavior changes.
 
 Keep the difference between working local features, provider integrations, external handoffs and concept demonstrations visible in code, UI copy and docs.
@@ -29,6 +29,7 @@ Keep derived data outside the repo. Checks:
 swiftc IndicaOS/CalculatorEngine.swift Tests/CalculatorTests.swift -o /tmp/calculator-tests && /tmp/calculator-tests
 swiftc IndicaOS/PagerPhysics.swift Tests/PagerPhysicsTests.swift -o /tmp/pager-tests && /tmp/pager-tests
 swiftc IndicaOS/LocalLogic.swift Tests/LocalLogicTests.swift -o /tmp/local-tests && /tmp/local-tests
+swiftc IndicaOS/InstrumentTokens.swift Tests/InstrumentTokenTests.swift -o /tmp/token-tests && /tmp/token-tests
 ```
 
 A source parse, a build, a simulator check, a physical-device test and a live provider test are different claims. Report which one produced the evidence.
@@ -40,4 +41,4 @@ A source parse, a build, a simulator check, a physical-device test and a live pr
 
 ## Git
 
-Commits use the owner's GitHub-linked identity from the existing history (`Bryce Whittsette <brycewhitt@icloud.com>`), passed per commit; no git identity is configured on this machine. `main` is unprotected. CI (`.github/workflows/build.yml`) runs the calculator, pager and local logic checks and an unsigned simulator build on every push and PR. Work goes on branches and lands through reviewable PRs.
+Commits use the owner's GitHub-linked identity from the existing history (`Bryce Whittsette <brycewhitt@icloud.com>`), passed per commit; no git identity is configured on this machine. `main` is unprotected. CI (`.github/workflows/build.yml`) runs the calculator, pager, local logic and token contrast checks and an unsigned simulator build on every push and PR. Work goes on branches and lands through reviewable PRs.

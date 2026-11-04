@@ -13,7 +13,7 @@ private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
     case homeScreen
     case wallpaper
     case lockScreen
-    case glass
+    case colorMotion
     case accessibility
     case privacy
     case battery
@@ -37,7 +37,7 @@ private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
         case .homeScreen: "Home Screen & App Library"
         case .wallpaper: "Wallpaper"
         case .lockScreen: "Lock Screen"
-        case .glass: "Glass, Color & Motion"
+        case .colorMotion: "Color & Motion"
         case .accessibility: "Accessibility"
         case .privacy: "Privacy & Security"
         case .battery: "Battery"
@@ -50,7 +50,7 @@ private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
     var detail: String? {
         switch self {
         case .connections: "OAuth, APIs, device permissions"
-        case .glass: "Liquid Glass"
+        case .colorMotion: "Accent and motion"
         case .developer: "Credentials & redirect URIs"
         default: nil
         }
@@ -70,12 +70,12 @@ private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
         case .homeScreen: "square.grid.3x3.fill"
         case .wallpaper: "photo.fill"
         case .lockScreen: "lock.rectangle.fill"
-        case .glass: "drop.fill"
+        case .colorMotion: "paintpalette.fill"
         case .accessibility: "accessibility"
         case .privacy: "hand.raised.fill"
         case .battery: "battery.100percent"
         case .general: "gear"
-        case .apps: "app.grid.3x3"
+        case .apps: "square.grid.3x3.fill"
         case .developer: "wrench.and.screwdriver.fill"
         }
     }
@@ -93,7 +93,7 @@ private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
         case .homeScreen: .cyan
         case .wallpaper: .cyan
         case .lockScreen: .indigo
-        case .glass: .purple
+        case .colorMotion: .purple
         case .accessibility: .blue
         case .privacy: .blue
         case .battery: .green
@@ -112,7 +112,7 @@ struct IndicaSettingsApp: View {
 
     private let connectionRoutes: [SettingsRoute] = [.wifi, .bluetooth, .cellular, .vpn]
     private let behaviorRoutes: [SettingsRoute] = [.notifications, .sounds, .focus]
-    private let personalizationRoutes: [SettingsRoute] = [.display, .homeScreen, .wallpaper, .lockScreen, .glass]
+    private let personalizationRoutes: [SettingsRoute] = [.display, .homeScreen, .wallpaper, .lockScreen, .colorMotion]
     private let systemRoutes: [SettingsRoute] = [.accessibility, .privacy, .battery, .general, .apps, .developer]
 
     var body: some View {
@@ -203,11 +203,11 @@ struct IndicaSettingsApp: View {
         case .wifi: device.network == .wifi ? "Connected" : "Not connected"
         case .bluetooth: system.bluetoothEnabled ? "On" : "Off"
         case .vpn: "Not Connected"
-        case .notifications: "\(system.notifications.count) recent"
+        case .notifications: system.notificationCountText
         case .focus: system.isFocusEnabled ? "On" : "Off"
         case .display: system.appearance.rawValue
         case .wallpaper: system.wallpaper.rawValue
-        case .glass: "\(Int(system.glassIntensity * 100))%"
+        case .colorMotion: system.accentStyle.rawValue
         case .battery: device.batteryPercentText ?? "Unavailable"
         case .connections: "\(connections.connectedCount) ready"
         default: route.detail
@@ -237,7 +237,7 @@ struct IndicaSettingsApp: View {
         case .homeScreen: HomeScreenSettingsView()
         case .wallpaper: WallpaperSettingsView()
         case .lockScreen: LockScreenSettingsView()
-        case .glass: GlassSettingsView()
+        case .colorMotion: ColorMotionSettingsView()
         case .accessibility: AccessibilitySettingsView()
         case .privacy: PrivacySettingsView()
         case .battery: BatterySettingsView()
@@ -762,36 +762,24 @@ private struct HomeScreenSettingsView: View {
             system.iconAppearance = appearance
         } label: {
             VStack(spacing: 5) {
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(iconColors(appearance))
-                    .frame(width: 52, height: 52)
+                AppMark(app: .notes, size: 52, appearance: appearance)
                     .overlay {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(.white)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 13)
-                            .stroke(system.iconAppearance == appearance ? system.accent : .clear, lineWidth: 3)
+                        if system.iconAppearance == appearance {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Instrument.signal, lineWidth: 2)
+                                .padding(-3)
+                        }
                     }
                 Text(appearance.rawValue)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.caption2)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
-    }
-
-    private func iconColors(_ appearance: AppIconAppearance) -> LinearGradient {
-        let colors: [Color]
-        switch appearance {
-        case .light: colors = [.purple.opacity(0.7), .pink.opacity(0.6)]
-        case .dark: colors = [.purple.opacity(0.6), .black]
-        case .clear: colors = [.white.opacity(0.35), .gray.opacity(0.2)]
-        case .tinted: colors = [system.accent, system.accent.opacity(0.45)]
-        case .automatic: colors = [.purple, .blue]
-        }
-        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+        .accessibilityLabel(appearance.rawValue)
+        .accessibilityAddTraits(system.iconAppearance == appearance ? .isSelected : [])
     }
 }
 
@@ -803,7 +791,7 @@ private struct WallpaperSettingsView: View {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 18) {
                 ForEach(WallpaperStyle.allCases) { wallpaper in
                     Button {
-                        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+                        withAnimation(Instrument.motion) {
                             system.wallpaper = wallpaper
                         }
                     } label: {
@@ -842,27 +830,27 @@ private struct LockScreenSettingsView: View {
             VStack(spacing: 18) {
                 IndicaWallpaper(style: system.wallpaper)
                     .overlay {
-                        VStack(spacing: 5) {
-                            Text("Friday, July 17")
-                                .font(.caption.bold())
-                            Text("9:41")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(Date.now.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)).uppercased())
+                                .font(Instrument.mono(.caption, weight: .medium))
+                            Text(Date.now.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)))
                                 .font(.system(size: 57, weight: system.lockClockStyle.weight, design: system.lockClockStyle.design))
                             if system.showLockWidgets {
-                                HStack {
-                                    Label("72°", systemImage: "cloud.sun.fill")
-                                    Label("2:30", systemImage: "calendar")
-                                }
-                                .font(.caption.bold())
-                                .padding(10)
-                                .liquidGlass(cornerRadius: 18, intensity: 0.7)
+                                LedgerStrip(verticalPadding: 8)
+                                    .padding(.top, 8)
                             }
                             Spacer()
                         }
-                        .padding(.top, 35)
+                        .padding(16)
+                        .padding(.top, 19)
                         .foregroundStyle(system.wallpaper.foreground)
                     }
                     .frame(height: 420)
-                    .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Instrument.edge, lineWidth: Instrument.hairline)
+                    }
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Clock Style")
@@ -894,32 +882,12 @@ private struct LockScreenSettingsView: View {
     }
 }
 
-private struct GlassSettingsView: View {
+private struct ColorMotionSettingsView: View {
     @EnvironmentObject private var system: IndicaSystem
 
     var body: some View {
         Form {
-            Section {
-                ZStack {
-                    IndicaWallpaper(style: system.wallpaper)
-                    HStack(spacing: 12) {
-                        glassSample("Control", symbol: "switch.2")
-                        glassSample("Widget", symbol: "square.grid.2x2.fill")
-                    }
-                    .padding()
-                }
-                .frame(height: 180)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-
-            Section("Liquid Glass") {
-                VStack(alignment: .leading, spacing: 8) {
-                    LabeledContent("Intensity", value: "\(Int(system.glassIntensity * 100))%")
-                    Slider(value: $system.glassIntensity, in: 0.35...1.15)
-                }
-                Toggle("Reduce Transparency", isOn: $system.reduceTransparency)
+            Section("Motion") {
                 Toggle("Reduce Motion", isOn: $system.reduceMotion)
             }
 
@@ -936,37 +904,19 @@ private struct GlassSettingsView: View {
                                     if system.accentStyle == accent {
                                         Image(systemName: "checkmark")
                                             .font(.caption.bold())
-                                            .foregroundStyle(.white)
+                                            .foregroundStyle(accent.onColor)
                                     }
                                 }
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(accent.rawValue)
+                        .accessibilityAddTraits(system.accentStyle == accent ? .isSelected : [])
                     }
                 }
                 .padding(.vertical, 4)
             }
-
-            Section {
-                Text("Newer iOS runtimes use SwiftUI’s native glass effect. Older runtimes use Swift UI’s material fallback with the same settings.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
         }
-        .navigationTitle("Glass & Motion")
-    }
-
-    private func glassSample(_ title: String, symbol: String) -> some View {
-        VStack(spacing: 9) {
-            Image(systemName: symbol)
-                .font(.title2)
-            Text(title)
-                .font(.caption.bold())
-        }
-        .foregroundStyle(system.wallpaper.foreground)
-        .frame(maxWidth: .infinity)
-        .frame(height: 105)
-        .liquidGlass(cornerRadius: 25, intensity: 1)
+        .navigationTitle("Color & Motion")
     }
 }
 
@@ -989,11 +939,10 @@ private struct AccessibilitySettingsView: View {
 
             Section("Motion") {
                 Toggle("Reduce Motion", isOn: $system.reduceMotion)
-                Toggle("Reduce Transparency", isOn: $system.reduceTransparency)
             }
 
             Section("Preview") {
-                Text("Swift UI adapts its text, material, and animations to these preferences.")
+                Text("Swift UI adapts its text and animations to these preferences.")
                     .font(.body)
             }
         }
@@ -1533,6 +1482,6 @@ private struct AppSettingsMark: View {
     var size: CGFloat = 34
 
     var body: some View {
-        PremiumAppMark(app: app, size: size)
+        AppMark(app: app, size: size)
     }
 }

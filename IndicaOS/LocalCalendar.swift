@@ -8,6 +8,11 @@ struct CalendarApp: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
     @State private var editing: EventDraft?
+    @ScaledMetric(relativeTo: .subheadline) private var dayCellHeight: CGFloat = 48
+    @ScaledMetric(relativeTo: .footnote) private var timeColumnWidth: CGFloat = 76
+
+    /// Scales with text, but stays a comfortable target and doesn't dwarf the capped numerals.
+    private var cellHeight: CGFloat { min(max(dayCellHeight, 44), 72) }
 
     /// Weekday symbols ordered from the locale's first weekday.
     private var weekdaySymbols: [String] {
@@ -45,54 +50,44 @@ struct CalendarApp: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 18) {
-                    HStack {
+                VStack(spacing: 0) {
+                    InstrumentRule()
+
+                    HStack(spacing: 0) {
                         ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, day in
                             Text(day)
-                                .font(.caption.bold())
-                                .foregroundStyle(.secondary)
+                                .font(Instrument.mono(.caption2))
+                                .foregroundStyle(Instrument.inkSecondary)
+                                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                                .lineLimit(1)
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
                         }
                     }
 
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 12) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
                         ForEach(Array(monthCells.enumerated()), id: \.offset) { _, cell in
                             if let date = cell {
                                 dayCell(date)
                             } else {
-                                Color.clear.frame(height: 42)
+                                // Blank cells keep the rule running to the start of the row.
+                                VStack(spacing: 0) {
+                                    InstrumentRule(color: Instrument.rule)
+                                    Spacer(minLength: 0)
+                                }
+                                .frame(minHeight: cellHeight)
+                                .accessibilityHidden(true)
                             }
                         }
                     }
 
-                    Divider()
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(selectedDate.formatted(.dateTime.month(.wide).day()))
-                            .font(.title2.bold())
-
-                        let dayEvents = eventsOnSelectedDate
-                        if dayEvents.isEmpty {
-                            ContentUnavailableView(
-                                "No Events",
-                                systemImage: "calendar.badge.plus",
-                                description: Text("Tap + to add one.")
-                            )
-                            .frame(height: 180)
-                        } else {
-                            ForEach(dayEvents) { event in
-                                eventRow(event)
-                            }
-                        }
-
-                        Text("Events are saved on this iPhone. They aren't synced with the iOS Calendar.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    selectedDaySection
+                        .padding(.top, 24)
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
+            .background(Instrument.surface)
             .navigationTitle(displayedMonth.formatted(.dateTime.month(.wide).year()))
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
@@ -112,10 +107,47 @@ struct CalendarApp: View {
                         .accessibilityLabel("Add event")
                 }
             }
+            // Signal marks what's current, so plain controls here stay ink. The editor
+            // sheet keeps the accent: an ink Toggle loses its white knob in dark.
+            .tint(Instrument.ink)
             .sheet(item: $editing) { draft in
                 EventEditor(draft: draft, calendar: calendar)
+                    .tint(Instrument.signalText)
             }
         }
+    }
+
+    private var selectedDaySection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(selectedDate.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)).uppercased())
+                .font(Instrument.mono(.caption2))
+                .foregroundStyle(Instrument.inkSecondary)
+                .padding(.bottom, 8)
+                .accessibilityAddTraits(.isHeader)
+
+            InstrumentRule()
+
+            let dayEvents = eventsOnSelectedDate
+            if dayEvents.isEmpty {
+                Text("Nothing on this day. Tap + to add an event.")
+                    .font(.subheadline)
+                    .foregroundStyle(Instrument.inkSecondary)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .padding(.vertical, 8)
+                InstrumentRule(color: Instrument.rule)
+            } else {
+                ForEach(dayEvents) { event in
+                    eventRow(event)
+                    InstrumentRule(color: Instrument.rule)
+                }
+            }
+
+            Text("Saved on this iPhone. Not synced with the iOS Calendar.")
+                .font(.footnote)
+                .foregroundStyle(Instrument.inkSecondary)
+                .padding(.top, 14)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func dayCell(_ date: Date) -> some View {
@@ -125,20 +157,35 @@ struct CalendarApp: View {
         return Button {
             selectedDate = date
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: 3) {
                 Text("\(calendar.component(.day, from: date))")
-                    .font(.callout.weight(isSelected || isToday ? .bold : .medium))
-                    .frame(width: 34, height: 34)
-                    .background(isSelected ? .red : .clear, in: Circle())
-                    .foregroundStyle(isSelected ? .white : (isToday ? .red : .primary))
-                Circle()
-                    .fill(hasEvent ? Color.red : .clear)
-                    .frame(width: 4, height: 4)
+                    .font(Instrument.mono(.subheadline, weight: isToday ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Instrument.surface : (isToday ? Instrument.signalText : Instrument.ink))
+                    // Seven columns can't hold larger two-digit days without running together.
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                // A short mark under a day with events.
+                (isSelected ? Instrument.surface : Instrument.ink)
+                    .frame(width: 10, height: 2)
+                    .opacity(hasEvent ? 1 : 0)
             }
-            .frame(minWidth: 44, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: cellHeight)
+            .background(isSelected ? Instrument.ink : .clear)
+            // The selected day is a solid block with a signal underline.
+            .overlay(alignment: .bottom) {
+                if isSelected {
+                    Instrument.signal.frame(height: 3)
+                }
+            }
+            .overlay(alignment: .top) {
+                InstrumentRule(color: isSelected ? Instrument.ink : Instrument.rule)
+            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(date.formatted(date: .complete, time: .omitted))
-        .accessibilityValue(hasEvent ? "Has events" : "")
+        .accessibilityValue([isToday ? "Today" : nil, hasEvent ? "Has events" : nil].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -146,35 +193,52 @@ struct CalendarApp: View {
         Button {
             editing = EventDraft(event: event, calendar: calendar)
         } label: {
-            HStack(spacing: 12) {
-                Capsule()
-                    .fill(.red)
-                    .frame(width: 4, height: 45)
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(leadingTime(for: event))
+                    .font(Instrument.mono(.footnote))
+                    .foregroundStyle(Instrument.signalText)
+                    .frame(width: timeColumnWidth, alignment: .leading)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(event.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.headline)
+                        .foregroundStyle(Instrument.ink)
                         .multilineTextAlignment(.leading)
-                    Text(timeText(for: event))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if let detail = untilText(for: event) {
+                        Text(detail)
+                            .font(.footnote)
+                            .foregroundStyle(Instrument.inkSecondary)
+                    }
                 }
-                Spacer()
+                Spacer(minLength: 0)
             }
-            .padding(12)
-            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.vertical, 14)
+            .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
-    private func timeText(for event: CalendarEvent) -> String {
-        guard !event.isAllDay else { return "All day" }
-        let start = event.start.formatted(date: .omitted, time: .shortened)
-        let end = event.end.formatted(date: .omitted, time: .shortened)
-        if calendar.isDate(event.start, inSameDayAs: event.end) {
-            return "\(start) – \(end)"
+    private func leadingTime(for event: CalendarEvent) -> String {
+        if event.isAllDay { return "All day" }
+        // On a later day of a multi-day event, a bare time would read as today's.
+        if !calendar.isDate(event.start, inSameDayAs: selectedDate) {
+            return event.start.formatted(.dateTime.month(.abbreviated).day())
         }
-        return "\(event.start.formatted(date: .abbreviated, time: .shortened)) – \(event.end.formatted(date: .abbreviated, time: .shortened))"
+        return event.start.formatted(date: .omitted, time: .shortened)
+    }
+
+    /// When it ends, for an event with a time. All-day events only need this across days.
+    private func untilText(for event: CalendarEvent) -> String? {
+        if event.isAllDay {
+            let interval = event.localInterval(in: calendar)
+            let last = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.start
+            guard !calendar.isDate(interval.start, inSameDayAs: last) else { return nil }
+            return "Until \(last.formatted(.dateTime.month(.abbreviated).day()))"
+        }
+        if calendar.isDate(event.start, inSameDayAs: event.end) {
+            return "Until \(event.end.formatted(date: .omitted, time: .shortened))"
+        }
+        return "Until \(event.end.formatted(date: .abbreviated, time: .shortened))"
     }
 }
 

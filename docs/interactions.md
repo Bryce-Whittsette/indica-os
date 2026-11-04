@@ -15,7 +15,7 @@ Evidence labels: **sim** means scripted touches on the iPhone 18 Pro simulator (
 | App bottom bar | `HybridAppNavigationBar` | 7 pt upward, 30 pt to go Home | Bar buttons | Short drag springs back |
 | App content | The app's own views | Scroll, text selection and back as provided by SwiftUI | | |
 | Sheets | iOS | System sheet drag | | |
-| Top of screen, 82 pt | Shell | Drag down 70 pt | | Opens Notifications on the left, Control Center on the right |
+| Top of screen: the status bar region plus 20 pt | Shell | Mostly downward, 70 pt, with no overlay open | Sideways drags stay with the pager | Opens Notifications on the left, Control Center on the right. Sim: from y=30, on a fresh launch. A quick second swipe reaches iOS instead, by design |
 | Bottom of screen, Lock | Shell | Drag up 46 pt | | Unlocks |
 | Real top and bottom screen edges | Shell first, then iOS | `defersSystemGestures(on: .vertical)` | First swipe goes to the shell | A second swipe reaches iOS, so a deliberate exit still works |
 
@@ -32,8 +32,8 @@ Evidence labels: **sim** means scripted touches on the iPhone 18 Pro simulator (
 | Interaction | Trigger and threshold | While moving | Release | Interruption | Haptic | Accessible alternative | Checked |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Page swipe | 10 pt sideways | 1:1 with the finger, from where it was grabbed. Rubber-bands past the ends | Projects velocity, lands at most one page away, critically damped spring carrying release speed | Touch-down stops at the on-screen position | None | Three-finger scroll, pill actions | Sim: tracking, short release, flick. Source: catch mid-settle |
-| Page scrub | Hold pill 280 ms, then 44 pt per page | Pages and dots follow continuously. Reversing moves back, nothing queues | Settles on the nearest page, no projection | System cancel settles | Medium on hold, selection per page | Next and Previous page actions on the pill | Sim: mid-page and settle. Source: reversal |
-| Search pill tap | Release within 10 pt, before 280 ms | Scales to 0.95 on touch-down | Opens search | Moving cancels | Selection | Default action | Sim |
+| Page scrub | Hold pill 280 ms, then 44 pt per page | Pages and the ruler follow continuously. Reversing moves back, nothing queues | Settles on the nearest page, no projection | System cancel settles | Medium on hold, selection per page | Next and Previous page actions on the pill | Sim: mid-page and settle. Source: reversal |
+| Search pill tap | Release within 10 pt, before 280 ms | Scales to 0.97 on touch-down | Opens search | Moving cancels | Selection | Default action | Sim |
 | Icon press | Touch-down | Scales immediately | Opens on release | Cancelled when the touch becomes a page swipe or a long press | Light on open | VoiceOver button | Sim: opens, flick doesn't open. Source: press cancel |
 | Home editing | 0.52 s hold on the grid | Icons wiggle | Done, or hold again | Moving 10 pt cancels | Rigid | Not provided yet | Source |
 | Switcher close | Upward drag | Card follows the finger | Closes past 130 pt or on a fast flick, otherwise springs back | System cancel restores | Light | Close action per card | Sim: partial and full from the lower card. Source: rapid flicks |
