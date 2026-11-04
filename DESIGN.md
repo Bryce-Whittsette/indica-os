@@ -1,6 +1,6 @@
 # Design system: Instrument
 
-The owner selected direction A, **Instrument**, on 2026-11-03 from three explored directions (`docs/brief/master-brief.md` §6). Comps: [Swift UI Brand Directions](https://claude.ai/artifact/DkZwBFrE2CY3hW7DQFr44h), which is private to the owner.
+The owner selected direction A, **Instrument**, on 2026-11-03 from three explored directions (`docs/brief/master-brief.md` §6). The selected direction's tokens and rules are recorded below.
 
 **Status: selected, not built.** The app still has the earlier prototype's look. Update this file as tokens ship, and keep it describing what's really in the code.
 
@@ -42,7 +42,7 @@ Signal means "this is current or needs you." It isn't decoration, and it isn't e
 - Dock tiles invert: `ink` tile, pale glyph.
 - Keep editable vector masters in the repo. Xcode asset catalogs can hold SVG as template images, which avoids a custom path parser.
 - SF Symbols stay for functional controls inside screens.
-- Third-party apps (Spotify, YouTube, Notion, Discord, Telegram, Gmail, Outlook, ChatGPT, Claude) don't get imitated logos. Use a neutral monogram tile unless official assets and their usage terms are confirmed.
+- Third-party apps (Spotify, YouTube, Notion, Discord, Telegram, Gmail, Outlook, ChatGPT) don't get imitated logos. Use a neutral monogram tile unless official assets and their usage terms are confirmed.
 - The Settings icon appearance options must keep working or be removed deliberately, with the change recorded.
 
 ## Material and depth
