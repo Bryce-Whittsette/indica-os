@@ -1,3 +1,4 @@
+import Network
 import SwiftUI
 
 enum SystemPhase: Equatable {
@@ -357,6 +358,18 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Apps that show sample data or simulate results instead of doing the
+    /// real task. See docs/audit/app-inventory.md for each entry's status.
+    var isConceptDemo: Bool {
+        switch self {
+        case .notes, .reminders, .calculator, .tips, .journal, .canvas, .settings, .accounts,
+             .chatGPT, .claude, .spotify, .youtube, .gmail, .outlook, .notion, .discord, .telegram:
+            false
+        default:
+            true
+        }
+    }
+
     var category: AppCategory {
         switch self {
         case .phone, .messages, .mail, .contacts, .videoCall, .gmail, .outlook, .discord, .telegram:
@@ -381,17 +394,31 @@ enum AppCategory: String {
     case system
 }
 
+/// Items the app seeds on first launch carry `isSample = true`. Anything the
+/// person creates or edits is personal and is never removed by a sample reset.
+/// Records saved before this flag existed decode as personal.
 struct NoteItem: Identifiable, Codable, Equatable {
     let id: UUID
     var title: String
     var body: String
     var modified: Date
+    var isSample: Bool
 
-    init(id: UUID = UUID(), title: String, body: String, modified: Date = .now) {
+    init(id: UUID = UUID(), title: String, body: String, modified: Date = .now, isSample: Bool = false) {
         self.id = id
         self.title = title
         self.body = body
         self.modified = modified
+        self.isSample = isSample
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        body = try container.decode(String.self, forKey: .body)
+        modified = try container.decode(Date.self, forKey: .modified)
+        isSample = try container.decodeIfPresent(Bool.self, forKey: .isSample) ?? false
     }
 }
 
@@ -399,11 +426,21 @@ struct ReminderItem: Identifiable, Codable, Equatable {
     let id: UUID
     var title: String
     var isComplete: Bool
+    var isSample: Bool
 
-    init(id: UUID = UUID(), title: String, isComplete: Bool = false) {
+    init(id: UUID = UUID(), title: String, isComplete: Bool = false, isSample: Bool = false) {
         self.id = id
         self.title = title
         self.isComplete = isComplete
+        self.isSample = isSample
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        isComplete = try container.decode(Bool.self, forKey: .isComplete)
+        isSample = try container.decodeIfPresent(Bool.self, forKey: .isSample) ?? false
     }
 }
 
@@ -412,13 +449,70 @@ struct MessageItem: Identifiable, Codable, Equatable {
     let text: String
     let isMine: Bool
     let sentAt: Date
+    var isSample: Bool
 
-    init(id: UUID = UUID(), text: String, isMine: Bool, sentAt: Date = .now) {
+    init(id: UUID = UUID(), text: String, isMine: Bool, sentAt: Date = .now, isSample: Bool = false) {
         self.id = id
         self.text = text
         self.isMine = isMine
         self.sentAt = sentAt
+        self.isSample = isSample
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        text = try container.decode(String.self, forKey: .text)
+        isMine = try container.decode(Bool.self, forKey: .isMine)
+        sentAt = try container.decode(Date.self, forKey: .sentAt)
+        isSample = try container.decodeIfPresent(Bool.self, forKey: .isSample) ?? false
+    }
+}
+
+struct JournalEntry: Identifiable, Codable, Equatable {
+    let id: UUID
+    var text: String
+    var created: Date
+    var isSample: Bool
+
+    init(id: UUID = UUID(), text: String, created: Date = .now, isSample: Bool = false) {
+        self.id = id
+        self.text = text
+        self.created = created
+        self.isSample = isSample
+    }
+}
+
+struct CanvasStroke: Identifiable, Codable, Equatable {
+    let id: UUID
+    var points: [CGPoint]
+    var color: CanvasInk
+
+    init(id: UUID = UUID(), points: [CGPoint], color: CanvasInk) {
+        self.id = id
+        self.points = points
+        self.color = color
+    }
+}
+
+enum CanvasInk: String, Codable, CaseIterable, Identifiable {
+    case indigo
+    case pink
+    case orange
+    case black
+
+    var id: String { rawValue }
+
+    var color: Color {
+        switch self {
+        case .indigo: .indigo
+        case .pink: .pink
+        case .orange: .orange
+        case .black: .black
+        }
+    }
+
+    var name: String { rawValue.capitalized }
 }
 
 struct SystemNotification: Identifiable, Equatable {
@@ -561,6 +655,13 @@ final class IndicaSystem: ObservableObject {
     @Published var messages: [MessageItem] {
         didSet { Self.save(messages, key: "messages") }
     }
+    @Published var journalEntries: [JournalEntry] {
+        didSet { Self.save(journalEntries, key: "journalEntries") }
+    }
+    @Published var canvasStrokes: [CanvasStroke] {
+        didSet { canvasStore.save(canvasStrokes) }
+    }
+    private let canvasStore = CanvasFileStore()
     @Published var homeAccessories: [String: Bool] = [
         "Living Room": true,
         "Desk Lamp": false,
@@ -597,22 +698,13 @@ final class IndicaSystem: ObservableObject {
     init() {
         appearance = IndicaAppearance(rawValue: UserDefaults.standard.string(forKey: "appearance") ?? "") ?? .automatic
         wallpaper = WallpaperStyle(rawValue: UserDefaults.standard.string(forKey: "wallpaper") ?? "") ?? .aura
-        notes = Self.load(
-            [NoteItem(title: "Welcome to Indica", body: "This note is saved locally. Edit it, create another, then relaunch the simulator.")],
-            key: "notes"
-        )
-        reminders = Self.load(
-            [ReminderItem(title: "Customize the Lock Screen"), ReminderItem(title: "Try Control Center")],
-            key: "reminders"
-        )
-        messages = Self.load(
-            [
-                MessageItem(text: "You made it home?", isMine: false, sentAt: .now.addingTimeInterval(-500)),
-                MessageItem(text: "Yep, testing Indica OS now.", isMine: true, sentAt: .now.addingTimeInterval(-420))
-            ],
-            key: "messages"
-        )
+        notes = Self.load(SampleContent.notes(), key: "notes")
+        reminders = Self.load(SampleContent.reminders(), key: "reminders")
+        messages = Self.load(SampleContent.messages(), key: "messages")
+        journalEntries = Self.load(SampleContent.journalEntries(), key: "journalEntries")
+        canvasStrokes = CanvasFileStore.load()
         capturedMoments = UserDefaults.standard.integer(forKey: "capturedMoments")
+        migrateSampleFlags()
 
         if ProcessInfo.processInfo.arguments.contains("--control") {
             phase = .home
@@ -752,11 +844,39 @@ final class IndicaSystem: ObservableObject {
         disabledBackgroundApps = []
     }
 
-    func resetDemoData() {
-        notes = [NoteItem(title: "Welcome to Indica", body: "A clean start.")]
-        reminders = [ReminderItem(title: "Explore the Home Screen")]
-        messages = [MessageItem(text: "Fresh start ✨", isMine: false)]
+    /// Removes only content the app seeded. Notes, reminders, messages and
+    /// journal entries the person created or edited are kept.
+    func removeSampleContent() {
+        notes.removeAll { $0.isSample }
+        reminders.removeAll { $0.isSample }
+        messages.removeAll { $0.isSample }
+        journalEntries.removeAll { $0.isSample }
         capturedMoments = 0
+    }
+
+    /// Records saved before `isSample` existed decode as personal. Once, mark
+    /// the ones that still exactly match text the app itself seeded.
+    private func migrateSampleFlags() {
+        let key = "sampleFlagsVersion"
+        guard UserDefaults.standard.integer(forKey: key) < 1 else { return }
+        for index in notes.indices where SampleContent.legacyNotes.contains(where: {
+            $0.title == notes[index].title && $0.body == notes[index].body
+        }) {
+            notes[index].isSample = true
+        }
+        for index in reminders.indices where SampleContent.legacyReminders.contains(reminders[index].title) {
+            reminders[index].isSample = true
+        }
+        for index in messages.indices where SampleContent.legacyMessages.contains(where: {
+            $0.text == messages[index].text && $0.isMine == messages[index].isMine
+        }) {
+            messages[index].isSample = true
+        }
+        // Saved explicitly so the migrated flags never depend on observer timing during init.
+        Self.save(notes, key: "notes")
+        Self.save(reminders, key: "reminders")
+        Self.save(messages, key: "messages")
+        UserDefaults.standard.set(1, forKey: key)
     }
 
     private static func save<T: Encodable>(_ value: T, key: String) {
@@ -764,14 +884,225 @@ final class IndicaSystem: ObservableObject {
         UserDefaults.standard.set(data, forKey: key)
     }
 
+    /// Unreadable data is copied aside before the fallback is used, so the
+    /// next save cannot overwrite the only copy of someone's content.
     private static func load<T: Decodable>(_ fallback: T, key: String) -> T {
-        guard
-            let data = UserDefaults.standard.data(forKey: key),
-            let decoded = try? JSONDecoder().decode(T.self, from: data)
-        else {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return fallback }
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            let prefix = "\(key).unreadable."
+            let alreadyKept = UserDefaults.standard.dictionaryRepresentation().contains { entry in
+                entry.key.hasPrefix(prefix) && (entry.value as? Data) == data
+            }
+            if !alreadyKept {
+                UserDefaults.standard.set(data, forKey: prefix + String(Int(Date.now.timeIntervalSince1970)))
+            }
             return fallback
         }
-        return decoded
+    }
+}
+
+/// First-launch content. Every item is flagged as a sample and has a fixed ID,
+/// so it is the same record across launches until the person changes it.
+enum SampleContent {
+    static func notes() -> [NoteItem] {
+        [NoteItem(
+            id: id("6A1F2C3E-0001-4C1A-9E5B-5A3D2F1E0001"),
+            title: "Welcome to Indica",
+            body: "This note is saved locally. Edit it, create another, then relaunch the simulator.",
+            isSample: true
+        )]
+    }
+
+    static func reminders() -> [ReminderItem] {
+        [
+            ReminderItem(id: id("6A1F2C3E-0002-4C1A-9E5B-5A3D2F1E0001"), title: "Customize the Lock Screen", isSample: true),
+            ReminderItem(id: id("6A1F2C3E-0002-4C1A-9E5B-5A3D2F1E0002"), title: "Try Control Center", isSample: true)
+        ]
+    }
+
+    static func messages() -> [MessageItem] {
+        [
+            MessageItem(
+                id: id("6A1F2C3E-0003-4C1A-9E5B-5A3D2F1E0001"),
+                text: "You made it home?",
+                isMine: false,
+                sentAt: .now.addingTimeInterval(-500),
+                isSample: true
+            ),
+            MessageItem(
+                id: id("6A1F2C3E-0003-4C1A-9E5B-5A3D2F1E0002"),
+                text: "Yep, testing Indica OS now.",
+                isMine: true,
+                sentAt: .now.addingTimeInterval(-420),
+                isSample: true
+            )
+        ]
+    }
+
+    static func journalEntries() -> [JournalEntry] {
+        [JournalEntry(
+            id: id("6A1F2C3E-0004-4C1A-9E5B-5A3D2F1E0001"),
+            text: "Today I started rebuilding Indica OS as a complete interactive system.",
+            isSample: true
+        )]
+    }
+
+    private static func id(_ string: String) -> UUID {
+        UUID(uuidString: string)!
+    }
+
+    /// Seed text shipped by earlier builds, including the old reset's stubs.
+    /// Keep these strings unchanged when the seed copy is rebranded; they
+    /// identify records already saved on people's devices.
+    static let legacyNotes: [(title: String, body: String)] = [
+        ("Welcome to Indica", "This note is saved locally. Edit it, create another, then relaunch the simulator."),
+        ("Welcome to Indica", "A clean start.")
+    ]
+    static let legacyReminders: Set<String> = [
+        "Customize the Lock Screen",
+        "Try Control Center",
+        "Explore the Home Screen"
+    ]
+    static let legacyMessages: [(text: String, isMine: Bool)] = [
+        ("You made it home?", false),
+        ("Yep, testing Indica OS now.", true),
+        ("Fresh start ✨", false)
+    ]
+}
+
+/// Real device facts from public APIs: battery from `UIDevice` monitoring and
+/// the active network interface from `NWPathMonitor`. Signal strength, carrier
+/// and Wi-Fi name are not available to apps, so they are never shown.
+@MainActor
+final class DeviceStatus: ObservableObject {
+    enum Network: Equatable {
+        case unknown, wifi, cellular, wired, other, offline
+
+        var symbol: String? {
+            switch self {
+            case .wifi: "wifi"
+            case .cellular: "antenna.radiowaves.left.and.right"
+            case .wired: "cable.connector"
+            case .offline: "wifi.slash"
+            case .unknown, .other: nil
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .wifi: "Wi-Fi"
+            case .cellular: "Cellular data"
+            case .wired: "Wired network"
+            case .other: "Connected"
+            case .offline: "No network connection"
+            case .unknown: "Network status unknown"
+            }
+        }
+    }
+
+    static let shared = DeviceStatus()
+
+    @Published private(set) var network: Network = .unknown
+    /// 0...1, or nil when the system reports no battery reading (for example in Simulator).
+    @Published private(set) var batteryLevel: Double?
+    @Published private(set) var batteryState: UIDevice.BatteryState = .unknown
+
+    private let monitor = NWPathMonitor()
+
+    private init() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        readBattery()
+        for name in [UIDevice.batteryLevelDidChangeNotification, UIDevice.batteryStateDidChangeNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.readBattery() }
+            }
+        }
+        monitor.pathUpdateHandler = { [weak self] path in
+            let network: Network
+            if path.status != .satisfied {
+                network = .offline
+            } else if path.usesInterfaceType(.wifi) {
+                network = .wifi
+            } else if path.usesInterfaceType(.cellular) {
+                network = .cellular
+            } else if path.usesInterfaceType(.wiredEthernet) {
+                network = .wired
+            } else {
+                network = .other
+            }
+            Task { @MainActor in self?.network = network }
+        }
+        monitor.start(queue: DispatchQueue(label: "IndicaOS.DeviceStatus.network", qos: .utility))
+    }
+
+    private func readBattery() {
+        let level = UIDevice.current.batteryLevel
+        batteryLevel = level < 0 ? nil : Double(level)
+        batteryState = UIDevice.current.batteryState
+    }
+
+    var batteryPercentText: String? {
+        batteryLevel.map { "\(Int(($0 * 100).rounded()))%" }
+    }
+
+    var batterySymbol: String? {
+        guard let batteryLevel else { return nil }
+        if batteryState == .charging || batteryState == .full { return "battery.100percent.bolt" }
+        switch batteryLevel {
+        case ..<0.13: return "battery.0percent"
+        case ..<0.38: return "battery.25percent"
+        case ..<0.63: return "battery.50percent"
+        case ..<0.88: return "battery.75percent"
+        default: return "battery.100percent"
+        }
+    }
+
+    var accessibilitySummary: String {
+        var parts = [network.description]
+        if let batteryPercentText {
+            parts.append("Battery \(batteryPercentText)" + (batteryState == .charging ? ", charging" : ""))
+        } else {
+            parts.append("Battery level unavailable")
+        }
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// Stores Canvas drawings as a JSON file in Application Support. Encoding and
+/// writing happen on a serial background queue, so the newest drawing is
+/// always the last write and drawing never waits on disk.
+final class CanvasFileStore {
+    private let queue = DispatchQueue(label: "IndicaOS.CanvasFileStore", qos: .utility)
+
+    private static var url: URL {
+        URL.applicationSupportDirectory.appending(path: "canvas-strokes.json")
+    }
+
+    static func load() -> [CanvasStroke] {
+        guard let data = try? Data(contentsOf: url) else { return [] }
+        do {
+            return try JSONDecoder().decode([CanvasStroke].self, from: data)
+        } catch {
+            // Keep the unreadable file instead of letting the next save replace it.
+            let backup = url.deletingLastPathComponent()
+                .appending(path: "canvas-strokes.unreadable.\(Int(Date.now.timeIntervalSince1970)).json")
+            try? FileManager.default.moveItem(at: url, to: backup)
+            return []
+        }
+    }
+
+    func save(_ strokes: [CanvasStroke]) {
+        queue.async {
+            guard let data = try? JSONEncoder().encode(strokes) else { return }
+            let url = Self.url
+            try? FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try? data.write(to: url, options: .atomic)
+        }
     }
 }
 
