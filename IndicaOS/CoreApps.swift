@@ -1319,9 +1319,11 @@ private struct NoteEditor: View {
     @State private var note: NoteItem
     @FocusState private var isTitleFocused: Bool
     private let isNew: Bool
+    private let original: NoteItem
 
     init(note: NoteItem) {
         _note = State(initialValue: note)
+        original = note
         isNew = note.title.isEmpty && note.body.isEmpty
     }
 
@@ -1356,11 +1358,23 @@ private struct NoteEditor: View {
 
     private func save(_ current: NoteItem) {
         let index = system.notes.firstIndex(where: { $0.id == current.id })
+
+        // Typing into a new note and clearing it again leaves no note behind.
+        if isNew, isBlank(current) {
+            if let index { system.notes.remove(at: index) }
+            return
+        }
+
+        // Back to how it opened: restore the original, including its date and
+        // sample status, so trying a keystroke doesn't count as an edit.
+        if !isNew, current.title == original.title, current.body == original.body {
+            if let index, system.notes[index] != original { system.notes[index] = original }
+            return
+        }
+
         if let index {
             let stored = system.notes[index]
             guard stored.title != current.title || stored.body != current.body else { return }
-        } else {
-            guard !current.title.isEmpty || !current.body.isEmpty else { return }
         }
         var edited = current
         edited.modified = .now
@@ -1370,6 +1384,11 @@ private struct NoteEditor: View {
         } else {
             system.notes.append(edited)
         }
+    }
+
+    private func isBlank(_ note: NoteItem) -> Bool {
+        note.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && note.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 
