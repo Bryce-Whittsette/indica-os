@@ -395,7 +395,7 @@ struct WalletApp: View {
     @State private var showingPass = false
 
     private let cards: [(String, String, [Color])] = [
-        ("Indica Cash", "$842.16", [.black, Color(hex: 0x3D4050)]),
+        ("Swift UI Cash", "$842.16", [.black, Color(hex: 0x3D4050)]),
         ("Metro Pass", "Unlimited", [.purple, .indigo]),
         ("Studio Card", "•• 4802", [.orange, .pink])
     ]
@@ -802,7 +802,7 @@ struct MediaCatalogApp: View {
         case .podcasts:
             [("Design Details", "New episode · 42m", "mic.fill"), ("City Signals", "Episode 18 · 31m", "building.2.fill"), ("Quiet Systems", "Episode 7 · 54m", "waveform")]
         case .news:
-            [("Indica OS becomes interactive", "Technology · 12m ago", "newspaper.fill"), ("A softer approach to phone design", "Design · 1h ago", "paintpalette.fill"), ("Tonight’s city guide", "Local · 2h ago", "location.fill")]
+            [("Swift UI becomes interactive", "Technology · 12m ago", "newspaper.fill"), ("A softer approach to phone design", "Design · 1h ago", "paintpalette.fill"), ("Tonight’s city guide", "Local · 2h ago", "location.fill")]
         case .books:
             [("Interfaces That Breathe", "Amara Cole · 38%", "book.closed.fill"), ("The Quiet City", "Noah Vale · New", "building.columns.fill"), ("Motion with Meaning", "Ren Ito · 72%", "figure.walk.motion")]
         case .store:
@@ -1342,7 +1342,7 @@ private struct WatchApp: View {
                                 }
                                 .foregroundStyle(.white)
                             }
-                        Text("Indica Watch")
+                        Text("Swift UI Watch")
                             .font(.title2.bold())
                         Text(paired ? "Connected" : "Not connected")
                             .foregroundStyle(paired ? .green : .secondary)

@@ -99,7 +99,7 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .telegram:
             "A full personal account requires Telegram’s native client API and phone or QR authorization."
         case .openAI:
-            "Developer API access for an Indica assistant. ChatGPT subscriptions and chat history are separate."
+            "Developer API access for an Swift UI assistant. ChatGPT subscriptions and chat history are separate."
         case .anthropic:
             "Developer API access for a Claude-powered assistant. Claude subscriptions and chat history are separate."
         }
@@ -122,14 +122,14 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         case .telegram:
             ["Personal chats with native client setup", "Contacts", "Channels", "Open Telegram"]
         case .openAI, .anthropic:
-            ["Private API credential in Keychain", "Indica assistant", "No access to consumer chat history"]
+            ["Private API credential in Keychain", "Swift UI assistant", "No access to consumer chat history"]
         }
     }
 
     var setupRequirement: String {
         switch self {
         case .apple:
-            "No third-party account credential is copied. Indica asks for each iPhone permission when the related feature is used."
+            "No third-party account credential is copied. Swift UI asks for each iPhone permission when the related feature is used."
         case .spotify:
             "Add a Spotify developer client ID and register indicaos://oauth/spotify as the redirect URI."
         case .google:
@@ -664,7 +664,7 @@ final class ConnectionStore: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "model": model,
-            "instructions": "You are the helpful assistant inside Indica OS. Be clear, concise, and friendly.",
+            "instructions": "You are the helpful assistant inside Swift UI. Be clear, concise, and friendly.",
             "input": history.map { message in
                 [
                     "role": message.role.rawValue,
@@ -706,7 +706,7 @@ final class ConnectionStore: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "model": model,
-            "system": "You are the helpful assistant inside Indica OS. Be clear, concise, and friendly.",
+            "system": "You are the helpful assistant inside Swift UI. Be clear, concise, and friendly.",
             "messages": history.map { message in
                 [
                     "role": message.role.rawValue,
@@ -898,7 +898,7 @@ private struct ConnectionsSummaryCard: View {
             .frame(width: 66, height: 66)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Indica Account Center")
+                Text("Swift UI Account Center")
                     .font(.title3.bold())
                 Text("\(store.connectedCount) services ready")
                     .font(.subheadline)
@@ -987,7 +987,7 @@ struct ServiceConnectionDetail: View {
             }
             .listRowBackground(Color.clear)
 
-            Section("What Indica Can Use") {
+            Section("What Swift UI Can Use") {
                 ForEach(service.capabilities, id: \.self) { capability in
                     Label(capability, systemImage: "checkmark.circle")
                 }
@@ -1193,7 +1193,7 @@ private struct APIKeySetupSheet: View {
 
                 Section {
                     Text(service.setupRequirement)
-                    Text("Indica stores the key in the device Keychain. It is never written to source code or UserDefaults.")
+                    Text("Swift UI stores the key in the device Keychain. It is never written to source code or UserDefaults.")
                 }
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -1363,7 +1363,7 @@ struct ConnectedServiceApp: View {
 
             Text(
                 store.isConnected(service)
-                ? "Indica can now use only the access you approved."
+                ? "Swift UI can now use only the access you approved."
                 : service.setupRequirement
             )
             .font(.subheadline)
@@ -1559,7 +1559,7 @@ struct AIAssistantApp: View {
             PremiumAppMark(app: app, size: 48)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("\(app.name) for Indica")
+                Text("\(app.name) for Swift UI")
                     .font(.headline)
                 Text("\(model) · Developer API")
                     .font(.caption)
@@ -1678,8 +1678,8 @@ struct AIAssistantApp: View {
             AIConversationMessage(
                 role: .assistant,
                 text: service == .anthropic
-                    ? "Hey, I’m Claude inside Indica OS. What do you want to work on?"
-                    : "Hey, I’m your OpenAI assistant inside Indica OS. What can I help with?"
+                    ? "Hey, I’m Claude inside Swift UI. What do you want to work on?"
+                    : "Hey, I’m your OpenAI assistant inside Swift UI. What can I help with?"
             )
         ]
     }

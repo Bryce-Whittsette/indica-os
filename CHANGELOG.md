@@ -10,7 +10,9 @@
 - Pager physics checks (`Tests/PagerPhysicsTests.swift`), run in CI alongside the calculator checks.
 
 ### Changed
+- The app is now named **Swift UI** on the Home Screen, in permission prompts, in Settings, in sample content and in the assistant's prompts. Sample notes, messages and journal entries saved under the old name are updated once; anything you wrote is left alone. The bundle ID, URL scheme, Spotify callback and stored data keys are unchanged.
 - With Reduce Motion on, a released page changes in place instead of sliding.
+- The first swipe from the top or bottom screen edge now asks to go to Swift UI's own gesture, and a second reaches iOS. This uses `defersSystemGestures` and hasn't been tested on a physical iPhone.
 
 ### Fixed
 - Coming back from an app returns to the Home Screen page you left. It always went back to the first page.
@@ -24,7 +26,11 @@
 - A gesture interrupted by the system no longer leaves the Search pill or switcher stuck.
 - The Home indicator has a larger touch target.
 
+### Stored data
+- New: `sampleBrandingVersion` in user defaults.
+
 ### Known limitations
+- With the keyboard up, the bottom-edge swipe can't start because that area belongs to the keyboard.
 - Switcher cards are still placeholders, not snapshots of the app.
 - Frame rate isn't established. On the iPhone 18 Pro simulator a settle drew about 7 to 10 frames, with the app's main thread mostly waiting on the simulator's renderer. It needs measuring on a physical iPhone.
 - Every keystroke in Notes re-encodes all notes. It hasn't been profiled with long notes on a device.

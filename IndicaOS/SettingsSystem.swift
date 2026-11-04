@@ -163,7 +163,7 @@ struct IndicaSettingsApp: View {
                         Button {
                             system.lock()
                         } label: {
-                            Label("Lock Indica OS", systemImage: "lock.fill")
+                            Label("Lock Swift UI", systemImage: "lock.fill")
                         }
                     }
 
@@ -462,7 +462,7 @@ private struct VPNSettingsView: View {
             }
 
             Section("Configuration") {
-                LabeledContent("Name", value: "Indica Private")
+                LabeledContent("Name", value: "Swift UI Private")
                 LabeledContent("Type", value: "WireGuard")
                 LabeledContent("Status", value: enabled ? "Connected" : "Not Connected")
             }
@@ -949,7 +949,7 @@ private struct GlassSettingsView: View {
             }
 
             Section {
-                Text("Newer iOS runtimes use SwiftUI’s native glass effect. Older runtimes use Indica’s material fallback with the same settings.")
+                Text("Newer iOS runtimes use SwiftUI’s native glass effect. Older runtimes use Swift UI’s material fallback with the same settings.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -994,7 +994,7 @@ private struct AccessibilitySettingsView: View {
             }
 
             Section("Preview") {
-                Text("Indica OS adapts its text, material, and animations to these preferences.")
+                Text("Swift UI adapts its text, material, and animations to these preferences.")
                     .font(.body)
             }
         }
@@ -1012,7 +1012,7 @@ private struct PrivacySettingsView: View {
             Section {
                 Toggle("Location Services", isOn: $system.locationServices)
                 Toggle("Allow Apps to Request to Track", isOn: $system.allowTrackingRequests)
-                Toggle("Share Indica Analytics", isOn: $system.analyticsSharing)
+                Toggle("Share Swift UI Analytics", isOn: $system.analyticsSharing)
             }
 
             Section("Network Privacy") {
@@ -1028,7 +1028,7 @@ private struct PrivacySettingsView: View {
             }
 
             Section {
-                Text("Indica never extracts passwords, browser cookies, Keychain entries, or active Mac app sessions. Account access uses provider consent screens or device permission dialogs.")
+                Text("Swift UI never extracts passwords, browser cookies, Keychain entries, or active Mac app sessions. Account access uses provider consent screens or device permission dialogs.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -1095,7 +1095,7 @@ private struct GeneralSettingsView: View {
             Section {
                 NavigationLink("About") { AboutSettingsView() }
                 NavigationLink("Software Update") { SoftwareUpdateSettingsView() }
-                NavigationLink("Indica Storage") { StorageSettingsView() }
+                NavigationLink("Swift UI Storage") { StorageSettingsView() }
             }
 
             Section {
@@ -1105,7 +1105,7 @@ private struct GeneralSettingsView: View {
             }
 
             Section {
-                NavigationLink("Transfer or Reset Indica") { ResetSettingsView() }
+                NavigationLink("Transfer or Reset Swift UI") { ResetSettingsView() }
             }
         }
         .navigationTitle("General")
@@ -1235,7 +1235,7 @@ private struct StorageSettingsView: View {
                 LabeledContent("Swift UI data", value: appDataSize.map { $0.formatted(.byteCount(style: .file)) } ?? "Calculating…")
             }
         }
-        .navigationTitle("Indica Storage")
+        .navigationTitle("Swift UI Storage")
         .task {
             appDataSize = await Task.detached(priority: .utility) { DeviceStorage.appDataSize() }.value
         }
@@ -1330,7 +1330,7 @@ private struct ResetSettingsView: View {
             }
         }
         .navigationTitle("Transfer or Reset")
-        .confirmationDialog("Reset every Indica setting?", isPresented: $showingResetSettings, titleVisibility: .visible) {
+        .confirmationDialog("Reset every Swift UI setting?", isPresented: $showingResetSettings, titleVisibility: .visible) {
             Button("Reset All Settings", role: .destructive) {
                 system.resetSystemSettings()
             }
@@ -1406,7 +1406,7 @@ private struct IndividualAppSettingsView: View {
                     VStack(alignment: .leading) {
                         Text(app.name)
                             .font(.headline)
-                        Text("Indica system app")
+                        Text("Swift UI system app")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -1469,7 +1469,7 @@ private struct DeveloperIntegrationView: View {
             }
 
             Section("Redirects") {
-                LabeledContent("Indica", value: "indicaos://oauth")
+                LabeledContent("Swift UI", value: "indicaos://oauth")
                 LabeledContent("Spotify", value: "indicaos://oauth/spotify")
                 Text("Client secrets belong on a secure backend, never in this Xcode project.")
                     .font(.caption)

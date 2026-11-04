@@ -641,7 +641,7 @@ private struct BrowserApp: View {
                         Text("Privacy Report")
                             .font(.title2.bold())
                             .padding(.top, 8)
-                        Label("Indica blocked 12 trackers in this demo session.", systemImage: "hand.raised.fill")
+                        Label("Swift UI blocked 12 trackers in this demo session.", systemImage: "hand.raised.fill")
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -710,13 +710,13 @@ private struct BrowserApp: View {
             pageBody = "72°, partly cloudy. A light shower may arrive after sunset."
         } else if query.contains("music") {
             pageTitle = "Now Playing"
-            pageBody = "Quiet Hours, an original demo playlist for Indica OS."
+            pageBody = "Quiet Hours, an original demo playlist for Swift UI."
         } else if query.contains("design") {
-            pageTitle = "Indica Design"
+            pageTitle = "Swift UI Design"
             pageBody = "Clarity first. Material responds to content, motion explains state, and personality lives in details."
         } else if query.contains("news") {
             pageTitle = "Today"
-            pageBody = "Indica OS prototype reaches its first interactive system build."
+            pageBody = "Swift UI prototype reaches its first interactive system build."
         } else if query.contains("start") {
             pageTitle = "Start Page"
             pageBody = "A calm place to begin."
@@ -733,7 +733,7 @@ private struct MailApp: View {
     @State private var unread = Set([0, 2])
 
     private let mail = [
-        ("Indica Design", "Review notes", "The Lock Screen direction is ready for feedback.", "11:24 AM"),
+        ("Swift UI Design", "Review notes", "The Lock Screen direction is ready for feedback.", "11:24 AM"),
         ("Maya", "Tonight?", "I found a place near the studio.", "10:08 AM"),
         ("Build System", "Prototype succeeded", "All simulator checks completed successfully.", "Yesterday"),
         ("Community", "Your weekly digest", "New ideas from people you follow.", "Monday")
@@ -1440,7 +1440,7 @@ private struct RemindersApp: View {
 }
 
 private struct FilesApp: View {
-    @State private var folders = ["Indica Projects", "Downloads", "On My iPhone"]
+    @State private var folders = ["Swift UI Projects", "Downloads", "On My iPhone"]
     @State private var showingNewFolder = false
     @State private var newFolder = ""
 
@@ -1448,7 +1448,7 @@ private struct FilesApp: View {
         NavigationStack {
             List {
                 Section("Locations") {
-                    Label("Indica Drive", systemImage: "icloud.fill")
+                    Label("Swift UI Drive", systemImage: "icloud.fill")
                     Label("On My iPhone", systemImage: "iphone")
                     Label("Recently Deleted", systemImage: "trash")
                 }
@@ -1462,7 +1462,7 @@ private struct FilesApp: View {
                 }
 
                 Section("Recent") {
-                    FileRow(name: "Indica OS brief", detail: "PDF · Today", symbol: "doc.fill")
+                    FileRow(name: "Swift UI brief", detail: "PDF · Today", symbol: "doc.fill")
                     FileRow(name: "Wallpaper studies", detail: "Folder · Yesterday", symbol: "folder.fill")
                     FileRow(name: "Motion notes", detail: "Text · Monday", symbol: "doc.text.fill")
                 }
@@ -1513,7 +1513,7 @@ private struct MusicApp: View {
     @State private var progress = 0.32
 
     private let tracks = [
-        ("Quiet Hours", "Indica Studio", [Color.purple, Color.indigo]),
+        ("Quiet Hours", "Swift UI Studio", [Color.purple, Color.indigo]),
         ("Slow Orbit", "Blue Static", [Color.cyan, Color.blue]),
         ("Soft Focus", "Glass Garden", [Color.pink, Color.orange])
     ]
