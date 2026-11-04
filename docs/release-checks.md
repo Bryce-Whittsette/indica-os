@@ -5,7 +5,7 @@
 Simulator, iOS 27.2, Debug build, scripted touches:
 
 - [x] Calendar: add, edit, all-day, multi-day across three days, delete with its confirmation.
-- [x] Clock: an alarm saves (it never had before). Stopwatch runs and laps. A finished timer shows Timer done on return.
+- [x] Clock: an alarm saves (it never had before). A one-time alarm fired on time with a banner while Clock was open, and its switch turned off. Stopwatch runs and laps. A finished timer shows Timer done on return.
 - [x] Home: hold to edit, minus removes an app, Done, the removal survives a relaunch, Add Back restores it. Search pill scrub lands on a page with the ruler.
 - [x] Switcher: a full swipe closes one card, with the new motion.
 - [x] Appearance: with no in-app setting, the app rendered dark after the simulator was set to dark. The simulator can take minutes to apply a change, so the switch itself wasn't timed.
@@ -78,7 +78,7 @@ Simulator, iPhone 18 Pro, iOS 27.2, scripted touches, Debug build:
 
 Still required:
 
-- [ ] Alarm firing (one-time and repeating), and a one-time alarm's switch turning itself off.
+- [ ] Alarm firing with the app closed, and repeating alarms.
 - [ ] Timer returning to the app after it finishes; relaunching mid-timer; Stopwatch and Alarm tabs in use.
 - [ ] Calendar edit, delete, all-day and multi-day in the app. The date rules have logic checks only.
 - [ ] Files: rename, delete, share, nested folders, large imports. Voice Memos: rename, share, denied access, a phone call interrupting, audible playback, and how long capture takes to start on a real iPhone.

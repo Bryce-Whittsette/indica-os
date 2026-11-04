@@ -240,7 +240,8 @@ struct SystemStatusBar: View {
 
     var body: some View {
         HStack {
-            TimelineView(.periodic(from: .now, by: 30)) { context in
+            // On the minute: a fixed 30-second period could read a minute behind.
+            TimelineView(.everyMinute) { context in
                 Text(context.date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)))
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
             }

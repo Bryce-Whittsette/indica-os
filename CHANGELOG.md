@@ -41,6 +41,8 @@
 - Reminders has an empty state, ignores blank entries and adds on Return.
 - Delete and Disconnect buttons in rows are red again.
 - White text on the orange accent failed contrast in dark, so main buttons no longer use it.
+- A one-time alarm that goes off while Clock is open turns its switch off right away, and its notification shows the time instead of saying "Alarm" twice.
+- The status bar's time changes on the minute. It could read a minute behind.
 - Done on the Home Screen no longer covers the weather cell. Dock icons don't open apps while editing, and icons no longer stay tilted after returning from an app.
 - Calendar days no longer wrap or run together at the largest text sizes.
 - Control Center has a bar that closes it, and every overlay closes with the VoiceOver escape gesture. It could only be closed by tapping the background, which VoiceOver can't reach.
