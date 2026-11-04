@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- Published a GitHub wiki with setup instructions, app and navigation guides, connection setup, storage and privacy details, a development guide, and troubleshooting.
+
 ### Removed
 - Removed the secondary assistant app, its provider API client, connection settings, model preference, and outbound links. The catalog now contains 49 apps; the OpenAI assistant and other services remain available.
 - Removed tool-specific project branding and external tooling links. Development instructions now live in `DEVELOPMENT.md`.
