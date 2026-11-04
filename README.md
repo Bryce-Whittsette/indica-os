@@ -1,12 +1,19 @@
-# Indica OS
+# Swift UI
 
-A SwiftUI study of a phone interface: lock screen, launcher, app switching, notification and control panels, settings, and small in-app experiences.
+*Formerly Indica OS.* A native iPhone app that hosts a complete phone-interface environment: lock screen, launcher, search, app switching, notification and control panels, settings, and 50 embedded apps.
 
-Indica runs inside an ordinary iOS application. It does not replace the operating system. Some views store local data, some connect to external APIs, and others demonstrate an interaction using sample data.
+Swift UI runs inside an ordinary iOS application. It does not replace the operating system. Some apps store your data locally, some connect to external services, and others are concept demos that use sample data. Concept demos are labeled **Concept demo · sample data** on screen, and [docs/audit/app-inventory.md](docs/audit/app-inventory.md) lists the status of every app.
 
-<img src="docs/images/home.png" alt="Earlier Indica home screen showing widgets, app icons, and a dock" width="320" />
+The visual redesign has not started yet, so the current look is the earlier prototype's. In-app branding still says "Indica" until the brand migration ships. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
-*Screenshot from the earlier prototype. The current source includes subsequent reliability and accessibility changes; a fresh simulator capture is still needed.*
+<p>
+  <img src="docs/images/v0.2.0/lock.png" alt="Lock screen with the time, three widgets and two notifications, beside the real camera cutout" width="200" />
+  <img src="docs/images/v0.2.0/home.png" alt="Home screen with weather and calendar widgets, a grid of app icons, the Search pill and the dock" width="200" />
+  <img src="docs/images/v0.2.0/calendar.png" alt="Calendar showing November 2026 with today highlighted and two sample events" width="200" />
+  <img src="docs/images/v0.2.0/weather.png" alt="Weather concept demo with the sample-data label above the bottom bar" width="200" />
+</p>
+
+*v0.2.0 captures from the iPhone 18 Pro simulator, iOS 27.2. The earlier prototype's screenshot is kept at `docs/images/home.png` for history.*
 
 ## Run
 
@@ -21,14 +28,18 @@ xcodebuild -project IndicaOS.xcodeproj -scheme IndicaOS \
   -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
 
-The source parses locally, the project/property lists validate, and the extracted calculator engine passes 13 checks. **The complete iOS app has not been rebuilt in this release review because Xcode is not installed on the review machine.** The included GitHub workflow performs that build after upload; no passing CI status is claimed before it runs.
+v0.2.0 was built with Xcode 27.2 and exercised on iPhone 18 Pro and iPhone 17e simulators (iOS 27.2). The extracted calculator engine passes 13 checks, and the GitHub workflow builds the app on Xcode 26. It has not yet been tested on a physical iPhone or on the iOS 17 runtime.
 
 ## What is implemented
 
 | Area | Behavior |
 | --- | --- |
 | Shell | Boot, lock, home pages, app switching, overlays, search, and navigation |
-| Local state | Notes, reminders, messages, and appearance preferences stored on device |
+| Local state | Notes, reminders, messages, journal entries, Canvas drawings, and appearance preferences stored on device; sample content is kept separate and can be removed without touching yours |
+| Search | Finds apps and notes from the Search pill or the page-two search row |
+| Device status | Network type and battery level from public iOS APIs; values iOS doesn't share are not shown |
+| Calendar | Real current month and today; events are sample data and are not saved yet |
+| Handoffs | Mail drafts open in the system mail app, the keypad dials through the Phone app, and Gmail, YouTube and Outlook open their own apps |
 | Calculator | Tested immediate-execution arithmetic, decimal input, clear, sign, percentage, and division errors |
 | Spotify | PKCE sign-in, profile, top tracks, and one refresh/retry when an access token expires |
 | Assistant connections | Developer API request flows using credentials in the device Keychain |
