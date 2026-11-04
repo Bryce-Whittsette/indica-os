@@ -11,5 +11,7 @@ jobs:
         run: swiftc IndicaOS/CalculatorEngine.swift Tests/CalculatorTests.swift -o /tmp/calculator-tests && /tmp/calculator-tests
       - name: Pager physics checks
         run: swiftc IndicaOS/PagerPhysics.swift Tests/PagerPhysicsTests.swift -o /tmp/pager-tests && /tmp/pager-tests
+      - name: Calendar and clock checks
+        run: swiftc IndicaOS/LocalLogic.swift Tests/LocalLogicTests.swift -o /tmp/local-tests && /tmp/local-tests
       - name: Build without signing
         run: xcodebuild -project IndicaOS.xcodeproj -scheme IndicaOS -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build

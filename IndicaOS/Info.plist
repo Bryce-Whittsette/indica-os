@@ -51,7 +51,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Swift UI uses your location for weather, maps, and location-aware widgets.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Swift UI uses the microphone for voice memos, calls, and camera recording.</string>
+	<string>Swift UI uses the microphone to record voice memos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Swift UI saves photos that you capture or create.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

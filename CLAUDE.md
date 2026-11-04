@@ -28,6 +28,7 @@ Keep derived data outside the repo. Checks:
 ```sh
 swiftc IndicaOS/CalculatorEngine.swift Tests/CalculatorTests.swift -o /tmp/calculator-tests && /tmp/calculator-tests
 swiftc IndicaOS/PagerPhysics.swift Tests/PagerPhysicsTests.swift -o /tmp/pager-tests && /tmp/pager-tests
+swiftc IndicaOS/LocalLogic.swift Tests/LocalLogicTests.swift -o /tmp/local-tests && /tmp/local-tests
 ```
 
 A source parse, a build, a simulator check, a physical-device test and a live provider test are different claims. Report which one produced the evidence.
@@ -39,4 +40,4 @@ A source parse, a build, a simulator check, a physical-device test and a live pr
 
 ## Git
 
-Commits use the owner's GitHub-linked identity from the existing history (`Bryce Whittsette <brycewhitt@icloud.com>`), passed per commit; no git identity is configured on this machine. `main` is unprotected. CI (`.github/workflows/build.yml`) runs the calculator and pager checks and an unsigned simulator build on every push and PR. Work goes on branches and lands through reviewable PRs.
+Commits use the owner's GitHub-linked identity from the existing history (`Bryce Whittsette <brycewhitt@icloud.com>`), passed per commit; no git identity is configured on this machine. `main` is unprotected. CI (`.github/workflows/build.yml`) runs the calculator, pager and local logic checks and an unsigned simulator build on every push and PR. Work goes on branches and lands through reviewable PRs.
