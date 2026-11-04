@@ -44,7 +44,7 @@ Independent review (read-only, source only) of the release candidate found no P0
 |---|---|---|
 | Fabricated status glyphs and Settings battery facts (P1) | Fixed: `DeviceStatus` (NWPathMonitor and UIDevice). Values iOS doesn't provide are omitted. | Status bar shows Wi-Fi only on the simulator, which reports no battery level. The cellular bars are gone. |
 | Search does nothing (P1) | Fixed: a search sheet for apps and notes | Searching "aud" found the Claude app and the user note. Tapping the note opened Notes. |
-| Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 33 apps. The baseline's 36 demos included Journal and Canvas, which now work, and Settings, which is partly real and not labeled. | Seen in Weather and Calendar. |
+| Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 33 apps at v0.2.0, 29 now. The baseline's 36 demos included Journal and Canvas, which now work, and Settings, which is partly real and not labeled. | Seen in Weather and Calendar. |
 | Calendar fixed to July 2026 (P1) | Fixed: real month and today, with month navigation | Captured November 2026 with Tuesday the 3rd as today. |
 | Mail "Send", Phone keypad call, Gmail → YouTube (P1) | Fixed: `mailto:`, `tel:` and per-app handoffs | Source only. Handoffs need a physical device. |
 | Switcher, Tips and Weather copy mismatches, and the AI "Connected" label (P1/P2) | Fixed (copy) | Source, plus the Weather capture. |
@@ -81,6 +81,10 @@ Independent source review of `7a972d6..647d7bd` blocked on one defect and listed
 | README and release checks not updated | P3 | Release checks updated; README updated with this milestone |
 
 The pager replaces `TabView`, which can't report a fractional page. Measured on the simulator during this work: a first version rebuilt every icon per frame and took 3.07 s and 18 frames to settle. Moving the offset into a `ViewModifier` brought it to 0.80 to 1.08 s and 7 to 9 frames. Stopping the wallpaper animation did not help (1.04 to 1.40 s), so it stays. A 3-second `sample` during a drag showed the main thread mostly waiting, with no icon `body` in the stacks, which points at the simulator's renderer. None of this establishes a device frame rate.
+
+### M4 — first real local apps (unreleased, branch `swift-ui/shell-gestures`)
+
+Calendar, Clock, Files and Voice Memos moved from concept demo to operational local, taking the labeled count from 33 to 29. Running them caught one defect the logic checks hadn't: `Text(date, format:)` applied the environment's time zone over the format's, so all world clocks showed the device's time. Fixed, with a check on the new `ClockFormat.time`. Exact scope and what's still unexercised are in `docs/release-checks.md`. This milestone has had no independent review yet.
 
 ## Audit health score
 

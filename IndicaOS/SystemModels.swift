@@ -363,6 +363,7 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
     var isConceptDemo: Bool {
         switch self {
         case .notes, .reminders, .calculator, .tips, .journal, .canvas, .settings, .accounts,
+             .calendar, .clock, .files, .voiceMemos,
              .chatGPT, .claude, .spotify, .youtube, .gmail, .outlook, .notion, .discord, .telegram:
             false
         default:
@@ -655,6 +656,9 @@ final class IndicaSystem: ObservableObject {
     @Published var messages: [MessageItem] {
         didSet { Self.save(messages, key: "messages") }
     }
+    @Published var calendarEvents: [CalendarEvent] {
+        didSet { Self.save(calendarEvents, key: "calendarEvents") }
+    }
     @Published var journalEntries: [JournalEntry] {
         didSet { Self.save(journalEntries, key: "journalEntries") }
     }
@@ -702,6 +706,7 @@ final class IndicaSystem: ObservableObject {
         reminders = Self.load(SampleContent.reminders(), key: "reminders")
         messages = Self.load(SampleContent.messages(), key: "messages")
         journalEntries = Self.load(SampleContent.journalEntries(), key: "journalEntries")
+        calendarEvents = Self.load([], key: "calendarEvents")
         canvasStrokes = CanvasFileStore.load()
         capturedMoments = UserDefaults.standard.integer(forKey: "capturedMoments")
         migrateSampleFlags()

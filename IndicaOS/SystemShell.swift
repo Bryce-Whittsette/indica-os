@@ -611,7 +611,25 @@ private struct HomeLayoutMetrics {
 }
 
 private struct HomeWidgetRow: View {
+    @EnvironmentObject private var system: IndicaSystem
     let height: CGFloat
+
+    /// The real next event, checked again each minute.
+    private func upNextText(at now: Date) -> (title: String, detail: String) {
+        guard let event = CalendarEvent.next(in: system.calendarEvents, after: now, calendar: .current) else {
+            return ("No upcoming events", "Calendar")
+        }
+        let start = event.localInterval(in: .current).start
+        let detail: String
+        if event.isAllDay {
+            detail = Calendar.current.isDateInToday(start) ? "All day" : start.formatted(.dateTime.month(.abbreviated).day())
+        } else if Calendar.current.isDateInToday(start) {
+            detail = start.formatted(date: .omitted, time: .shortened)
+        } else {
+            detail = start.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+        }
+        return (event.title, detail)
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -632,7 +650,7 @@ private struct HomeWidgetRow: View {
                         .symbolRenderingMode(.multicolor)
                         .font(.system(size: 19))
                 }
-                Text("Feels like 74°")
+                Text("Sample weather")
                     .font(.system(size: 10, weight: .medium))
                     .opacity(0.66)
             }
@@ -646,22 +664,19 @@ private struct HomeWidgetRow: View {
                     .font(.system(size: 9, weight: .bold, design: .default))
                     .tracking(1.5)
                     .opacity(0.62)
-                Text("Design review")
-                    .font(.system(size: 14, weight: .semibold, design: .default))
-                Text("2:30 PM")
-                    .font(.system(size: 11, weight: .semibold))
-                    .opacity(0.72)
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: 0xE8C5A3), Color(hex: 0xA67A58)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(height: 4)
+                TimelineView(.everyMinute) { context in
+                    let next = upNextText(at: context.date)
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text(next.title)
+                            .font(.system(size: 14, weight: .semibold, design: .default))
+                            .lineLimit(2)
+                        Text(next.detail)
+                            .font(.system(size: 11, weight: .semibold))
+                            .opacity(0.72)
+                    }
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(14)
             .background(.black.opacity(0.12), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             .liquidGlass(cornerRadius: 24, intensity: 0.56)

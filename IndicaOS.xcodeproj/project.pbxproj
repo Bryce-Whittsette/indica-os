@@ -13,6 +13,11 @@
 		A10000000000000000000004 /* SystemModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* SystemModels.swift */; };
 		A10000000000000000000011 /* PagerPhysics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* PagerPhysics.swift */; };
 		A10000000000000000000012 /* HomePager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* HomePager.swift */; };
+		A10000000000000000000013 /* LocalLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* LocalLogic.swift */; };
+		A10000000000000000000014 /* LocalCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* LocalCalendar.swift */; };
+		A10000000000000000000015 /* ClockApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* ClockApp.swift */; };
+		A10000000000000000000016 /* FilesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* FilesApp.swift */; };
+		A10000000000000000000017 /* VoiceMemos.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* VoiceMemos.swift */; };
 		A10000000000000000000005 /* SystemShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* SystemShell.swift */; };
 		A10000000000000000000006 /* CoreApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* CoreApps.swift */; };
 		A10000000000000000000007 /* EverydayApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* EverydayApps.swift */; };
@@ -30,6 +35,11 @@
 		A20000000000000000000004 /* SystemModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemModels.swift; sourceTree = "<group>"; };
 		A20000000000000000000011 /* PagerPhysics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagerPhysics.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* HomePager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePager.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* LocalLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLogic.swift; sourceTree = "<group>"; };
+		A20000000000000000000014 /* LocalCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCalendar.swift; sourceTree = "<group>"; };
+		A20000000000000000000015 /* ClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000016 /* FilesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000017 /* VoiceMemos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMemos.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* SystemShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemShell.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* CoreApps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreApps.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* EverydayApps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EverydayApps.swift; sourceTree = "<group>"; };
@@ -67,6 +77,11 @@
 				A20000000000000000000004 /* SystemModels.swift */,
 				A20000000000000000000011 /* PagerPhysics.swift */,
 				A20000000000000000000012 /* HomePager.swift */,
+				A20000000000000000000013 /* LocalLogic.swift */,
+				A20000000000000000000014 /* LocalCalendar.swift */,
+				A20000000000000000000015 /* ClockApp.swift */,
+				A20000000000000000000016 /* FilesApp.swift */,
+				A20000000000000000000017 /* VoiceMemos.swift */,
 				A20000000000000000000005 /* SystemShell.swift */,
 				A20000000000000000000006 /* CoreApps.swift */,
 				A20000000000000000000007 /* EverydayApps.swift */,
@@ -162,6 +177,11 @@
 				A10000000000000000000004 /* SystemModels.swift in Sources */,
 				A10000000000000000000011 /* PagerPhysics.swift in Sources */,
 				A10000000000000000000012 /* HomePager.swift in Sources */,
+				A10000000000000000000013 /* LocalLogic.swift in Sources */,
+				A10000000000000000000014 /* LocalCalendar.swift in Sources */,
+				A10000000000000000000015 /* ClockApp.swift in Sources */,
+				A10000000000000000000016 /* FilesApp.swift in Sources */,
+				A10000000000000000000017 /* VoiceMemos.swift in Sources */,
 				A10000000000000000000005 /* SystemShell.swift in Sources */,
 				A10000000000000000000006 /* CoreApps.swift in Sources */,
 				A10000000000000000000007 /* EverydayApps.swift in Sources */,

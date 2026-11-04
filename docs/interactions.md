@@ -22,7 +22,7 @@ Evidence labels: **sim** means scripted touches on the iPhone 18 Pro simulator (
 ### Host-app exit policy
 
 - Swift UI doesn't promise confinement. iOS keeps its Home gesture and Control Center. Deferral only asks for a second swipe.
-- The shell defers both vertical edges in every state, because each state has an internal edge swipe. The system's own bar is hidden so it doesn't draw under the shell's.
+- The shell defers both vertical edges in every state, because each state has an internal edge swipe. The shell also asks iOS to auto-hide its own bar with `persistentSystemOverlays(.hidden)`, but that bar was still visible in simulator captures taken a few seconds after launch.
 - **Not established.** The simulator's scripted edge swipe injects the OS gesture directly and left the app on the first swipe, so it can't show whether deferral works. Needs the repeated-gesture run from §21 on a physical iPhone: core apps, keyboard open and closed, counting unexpected exits, wrong transitions, lost input and stuck states.
 - **Platform-limited.** With the keyboard up, the bottom of the screen belongs to the keyboard's window, so the shell's swipe can't start there. Dismiss the keyboard first. Notes has Done for this.
 - For a single-app demo, [Guided Access](https://support.apple.com/en-us/111795) is optional setup that the person controls. It isn't a substitute for any of this.

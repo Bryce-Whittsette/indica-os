@@ -7,11 +7,18 @@
 - Hold the Search pill and move sideways to move through pages. A tap still opens search, and the hold no longer starts Home Screen editing. Page changes are announced to VoiceOver, and off-screen pages are out of the VoiceOver order.
 - Swipe a card up in the app switcher to close it. The card follows your finger and springs back if you let go early. Closing the last card goes Home. VoiceOver users get a Close action on each card.
 - Notes search, and an empty state when there are no notes.
-- Pager physics checks (`Tests/PagerPhysicsTests.swift`), run in CI alongside the calculator checks.
+- **Calendar is real.** Add, edit and delete events, including all-day and multi-day ones. They're saved on this iPhone and follow time-zone changes correctly. They don't sync with the iOS Calendar, and the app says so. The sample events are gone.
+- **Clock is real.** World clocks use real time zones and you can add cities. The timer runs from a deadline, so it stays right across switching apps and relaunching, and it notifies you when it's done. There's a new stopwatch with laps. Alarms arrive as notifications, which Silent mode and Focus can silence; the app says so.
+- **Files is real.** It shows Swift UI's own storage on this iPhone. Create folders, import files, preview, share, rename and delete. An import never overwrites a file. The invented files and "Drive" location are gone.
+- **Voice Memos is real.** It records from the microphone, with live levels, and plays back, renames, shares and deletes. If you turn microphone access off, it explains and links to Settings. Leaving the app stops and saves the recording. The simulated recordings are gone.
+- Calendar, Clock, Files and Voice Memos no longer carry the concept demo label, so 29 of 50 apps have it now.
+- The Home Screen's Up Next widget shows your real next event instead of a made-up one.
+- Pager physics and local logic checks (`Tests/PagerPhysicsTests.swift`, `Tests/LocalLogicTests.swift`), run in CI alongside the calculator checks.
 
 ### Changed
 - The app is now named **Swift UI** on the Home Screen, in permission prompts, in Settings, in sample content and in the assistant's prompts. Sample notes, messages and journal entries saved under the old name are updated once; anything you wrote is left alone. The bundle ID, URL scheme, Spotify callback and stored data keys are unchanged.
 - With Reduce Motion on, a released page changes in place instead of sliding.
+- The Home Screen weather widget says "Sample weather". It still shows a made-up forecast.
 - The first swipe from the top or bottom screen edge now asks to go to Swift UI's own gesture, and a second reaches iOS. This uses `defersSystemGestures` and hasn't been tested on a physical iPhone.
 
 ### Fixed
@@ -28,8 +35,11 @@
 
 ### Stored data
 - New: `sampleBrandingVersion` in user defaults.
+- New: `calendarEvents`, `clockCities`, `clockAlarms`, `clockTimer`, `clockStopwatch` and `clockTimerMinutes` in user defaults; `Documents/` for Files; `Application Support/VoiceMemos/` for recordings. Sample calendar events and recordings were never saved, so nothing needs migrating.
 
 ### Known limitations
+- Alarms can't ring through Silent mode or Focus, because they're notifications. Recording stops when you leave the app. Calendar has no invitations, reminders or repeating events.
+- In the simulator, recording took about 5 seconds to start capturing. If a real iPhone does the same, the first seconds would be lost.
 - With the keyboard up, the bottom-edge swipe can't start because that area belongs to the keyboard.
 - Switcher cards are still placeholders, not snapshots of the app.
 - Frame rate isn't established. On the iPhone 18 Pro simulator a settle drew about 7 to 10 frames, with the app's main thread mostly waiting on the simulator's renderer. It needs measuring on a physical iPhone.
