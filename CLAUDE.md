@@ -23,7 +23,7 @@ xcodebuild -project IndicaOS.xcodeproj -scheme IndicaOS -configuration Debug \
   -derivedDataPath /tmp/swiftui-dd CODE_SIGNING_ALLOWED=NO build
 ```
 
-Keep derived data outside the repo. Calculator checks:
+Keep derived data outside the repo. Checks:
 
 ```sh
 swiftc IndicaOS/CalculatorEngine.swift Tests/CalculatorTests.swift -o /tmp/calculator-tests && /tmp/calculator-tests

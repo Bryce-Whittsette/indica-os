@@ -10,10 +10,12 @@ Simulator, iPhone 18 Pro, iOS 27.2, scripted touches, Debug build:
 - [x] Leaving an app returns to the same Home Screen page.
 - [x] Switcher: partial and full swipes from the card's lower area stay in the switcher; a full swipe closes that card only.
 - [x] Notes: a new note typed and cleared leaves no blank note.
+- [x] Rename: iOS Home Screen shows Swift UI. An old-name sample note updates once, and a personal note with the same words stays as written.
 
 Still required:
 
 - [ ] Two flicks within 220 ms in the switcher. Scripted touches can't send them that fast, so this rests on source review.
+- [ ] Edge deferral: the §21 repeated-gesture run on a physical iPhone (`docs/interactions.md`). The simulator's scripted edge swipe can't test it.
 - [ ] A system-cancelled gesture on the pager, pill and switcher, on a physical iPhone.
 - [ ] Catching a settle mid-flight, and how all of it feels and how smooth it is, on a physical iPhone.
 - [ ] Frame pacing on a physical iPhone. The simulator's rate isn't evidence either way.

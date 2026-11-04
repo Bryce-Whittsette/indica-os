@@ -32,6 +32,12 @@ struct SystemShell: View {
             }
         }
         .statusBarHidden(true)
+        // Every shell state owns top and bottom edge swipes, so the first swipe from
+        // those edges reaches the shell. A second reaches iOS, so a deliberate exit
+        // still works. See docs/interactions.md.
+        .defersSystemGestures(on: .vertical)
+        // The shell draws its own bar; this avoids a second one under it.
+        .persistentSystemOverlays(.hidden)
     }
 
     @ViewBuilder
@@ -108,7 +114,7 @@ private struct BootScreen: View {
                 .scaleEffect(breathing ? 1.04 : 0.96)
                 .shadow(color: Color(hex: 0xB88C68).opacity(0.20), radius: 28)
 
-                Text("INDICA")
+                Text("SWIFT UI")
                     .font(.system(size: 13, weight: .semibold, design: .default))
                     .tracking(6)
                     .foregroundStyle(.white.opacity(0.82))
@@ -1391,7 +1397,7 @@ private struct HybridAppNavigationBar: View {
                     .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Home")
-                .accessibilityHint("Tap or swipe up to return to the Indica Home Screen")
+                .accessibilityHint("Tap or swipe up to return to the Home Screen")
 
                 Button {
                     system.showSwitcher()
@@ -1406,7 +1412,7 @@ private struct HybridAppNavigationBar: View {
             .buttonStyle(PressableButtonStyle(scale: 0.91))
 
             if isHintVisible {
-                Text("Swipe up for Indica Home")
+                Text("Swipe up for Home")
                     .font(.system(size: 8, weight: .semibold, design: .rounded))
                     .tracking(0.3)
                     .foregroundStyle(.secondary)

@@ -446,7 +446,7 @@ struct ReminderItem: Identifiable, Codable, Equatable {
 
 struct MessageItem: Identifiable, Codable, Equatable {
     let id: UUID
-    let text: String
+    var text: String
     let isMine: Bool
     let sentAt: Date
     var isSample: Bool
@@ -616,7 +616,7 @@ final class IndicaSystem: ObservableObject {
     @Published var privateWiFiAddress = UserDefaults.standard.object(forKey: "privateWiFiAddress") as? Bool ?? true {
         didSet { UserDefaults.standard.set(privateWiFiAddress, forKey: "privateWiFiAddress") }
     }
-    @Published var deviceName = UserDefaults.standard.string(forKey: "deviceName") ?? "My Indica" {
+    @Published var deviceName = UserDefaults.standard.string(forKey: "deviceName") ?? "My Swift UI" {
         didSet { UserDefaults.standard.set(deviceName, forKey: "deviceName") }
     }
     @Published var disabledNotificationApps = Set(
@@ -705,6 +705,7 @@ final class IndicaSystem: ObservableObject {
         canvasStrokes = CanvasFileStore.load()
         capturedMoments = UserDefaults.standard.integer(forKey: "capturedMoments")
         migrateSampleFlags()
+        migrateSampleBranding()
 
         if ProcessInfo.processInfo.arguments.contains("--control") {
             phase = .home
@@ -879,6 +880,34 @@ final class IndicaSystem: ObservableObject {
         UserDefaults.standard.set(1, forKey: key)
     }
 
+    /// Once, bring sample records saved under the old product name up to date. Only
+    /// a record still flagged as a sample, with exactly the text the app shipped,
+    /// is touched, so nothing the person wrote changes.
+    private func migrateSampleBranding() {
+        let key = "sampleBrandingVersion"
+        guard UserDefaults.standard.integer(forKey: key) < 1 else { return }
+        let currentNote = SampleContent.notes()[0]
+        for index in notes.indices where notes[index].isSample && SampleContent.legacyNotes.contains(where: {
+            $0.title == notes[index].title && $0.body == notes[index].body
+        }) {
+            notes[index].title = currentNote.title
+            notes[index].body = currentNote.body
+        }
+        for index in messages.indices where messages[index].isSample
+            && messages[index].text == SampleContent.legacyBrandedMessage {
+            messages[index].text = SampleContent.messages()[1].text
+        }
+        for index in journalEntries.indices where journalEntries[index].isSample
+            && journalEntries[index].text == SampleContent.legacyBrandedJournalEntry {
+            journalEntries[index].text = SampleContent.journalEntries()[0].text
+        }
+        // Saved explicitly, as above, so this never depends on observer timing during init.
+        Self.save(notes, key: "notes")
+        Self.save(messages, key: "messages")
+        Self.save(journalEntries, key: "journalEntries")
+        UserDefaults.standard.set(1, forKey: key)
+    }
+
     private static func save<T: Encodable>(_ value: T, key: String) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         UserDefaults.standard.set(data, forKey: key)
@@ -909,8 +938,8 @@ enum SampleContent {
     static func notes() -> [NoteItem] {
         [NoteItem(
             id: id("6A1F2C3E-0001-4C1A-9E5B-5A3D2F1E0001"),
-            title: "Welcome to Indica",
-            body: "This note is saved locally. Edit it, create another, then relaunch the simulator.",
+            title: "Welcome to Swift UI",
+            body: "This note is saved on this device. Edit it, create another, then relaunch the app.",
             isSample: true
         )]
     }
@@ -933,7 +962,7 @@ enum SampleContent {
             ),
             MessageItem(
                 id: id("6A1F2C3E-0003-4C1A-9E5B-5A3D2F1E0002"),
-                text: "Yep, testing Indica OS now.",
+                text: "Yep, testing Swift UI now.",
                 isMine: true,
                 sentAt: .now.addingTimeInterval(-420),
                 isSample: true
@@ -944,7 +973,7 @@ enum SampleContent {
     static func journalEntries() -> [JournalEntry] {
         [JournalEntry(
             id: id("6A1F2C3E-0004-4C1A-9E5B-5A3D2F1E0001"),
-            text: "Today I started rebuilding Indica OS as a complete interactive system.",
+            text: "Today I started rebuilding Swift UI as a complete interactive system.",
             isSample: true
         )]
     }
@@ -960,6 +989,8 @@ enum SampleContent {
         ("Welcome to Indica", "This note is saved locally. Edit it, create another, then relaunch the simulator."),
         ("Welcome to Indica", "A clean start.")
     ]
+    static let legacyBrandedMessage = "Yep, testing Indica OS now."
+    static let legacyBrandedJournalEntry = "Today I started rebuilding Indica OS as a complete interactive system."
     static let legacyReminders: Set<String> = [
         "Customize the Lock Screen",
         "Try Control Center",
