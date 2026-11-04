@@ -84,7 +84,7 @@ The pager replaces `TabView`, which can't report a fractional page. Measured on 
 
 ### M4 — first real local apps (unreleased, branch `swift-ui/shell-gestures`)
 
-Calendar, Clock, Files and Voice Memos moved from concept demo to operational local, taking the labeled count from 33 to 29. Running them caught one defect the logic checks hadn't: `Text(date, format:)` applied the environment's time zone over the format's, so all world clocks showed the device's time. Fixed, with a check on the new `ClockFormat.time`. Exact scope and what's still unexercised are in `docs/release-checks.md`. This milestone has had no independent review yet.
+Calendar, Clock, Files and Voice Memos moved from concept demo to operational local, taking the labeled count from 33 to 29. Running them caught one defect the logic checks hadn't: `Text(date, format:)` applied the environment's time zone over the format's, so all world clocks showed the device's time. Fixed, with a check on the new `ClockFormat.time`. Exact scope and what's still unexercised are in `docs/release-checks.md`. An independent source review then blocked on three findings: a recording could be deleted on interruption, a possible crash in the interruption handler, and alarms saved without permission looking armed but never firing. It also flagged notification races, a stuck pager when Home is destroyed mid-gesture, false README statements, a fake Calendar notification, and permission strings for features that don't exist. All are fixed in source and pass a build, but none of the fixes has been exercised on a simulator or device. Lower-priority items left open are in the changelog.
 
 ## Audit health score
 

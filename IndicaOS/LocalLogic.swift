@@ -165,6 +165,9 @@ struct ClockAlarm: Identifiable, Codable, Equatable {
     var weekdays: Set<Int>
     var label: String
     var isOn: Bool
+    /// When a scheduled one-time alarm goes off, so it can be told apart from one whose
+    /// notification couldn't be scheduled. Nil if it's repeating or not scheduled.
+    var oneTimeFireDate: Date?
 
     init(id: UUID = UUID(), hour: Int, minute: Int, weekdays: Set<Int> = [], label: String = "", isOn: Bool = true) {
         self.id = id

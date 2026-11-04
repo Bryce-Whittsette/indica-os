@@ -545,7 +545,10 @@ private struct HomeScreen: View {
             .task(id: system.reduceMotion || systemReduceMotion) {
                 pager.reducesMotion = system.reduceMotion || systemReduceMotion
             }
-            .onAppear { pager.pageCount = system.homePages.count }
+            .onAppear {
+                pager.pageCount = system.homePages.count
+                pager.homeDidAppear()
+            }
             .overlay(alignment: .topTrailing) {
                 if system.isEditingHome {
                     Button("Done") {

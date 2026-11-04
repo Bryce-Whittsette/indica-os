@@ -127,6 +127,20 @@ final class HomePager: ObservableObject {
         }
     }
 
+    /// HomeScreen was destroyed mid-gesture, say when a second finger opened an app, so
+    /// no end event arrived. Called when it comes back.
+    func homeDidAppear() {
+        switch interaction {
+        case .none:
+            break
+        default:
+            interaction = .none
+            isSwiping = false
+            suppressesTap = false
+            settleIfBetweenPages()
+        }
+    }
+
     /// A long press took this touch, so its release shouldn't also open an app.
     func consumeTouchAsLongPress() {
         suppressesTap = true
@@ -308,8 +322,8 @@ struct HomePagerTrack<Content: View>: View {
             }
             .accessibilityScrollAction { edge in
                 switch edge {
-                case .leading: pager.go(to: pager.page + 1)
-                case .trailing: pager.go(to: pager.page - 1)
+                case .trailing: pager.go(to: pager.page + 1)
+                case .leading: pager.go(to: pager.page - 1)
                 default: break
                 }
             }
