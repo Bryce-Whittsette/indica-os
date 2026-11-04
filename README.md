@@ -28,7 +28,7 @@ xcodebuild -project IndicaOS.xcodeproj -scheme IndicaOS \
   -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
 
-v0.2.0 was built with Xcode 27.2 and exercised on iPhone 18 Pro and iPhone 17e simulators (iOS 27.2). The extracted calculator engine passes 13 checks, and the GitHub workflow builds the app on Xcode 26. It has not yet been tested on a physical iPhone or on the iOS 17 runtime.
+v0.3.0 was built with Xcode 27.2 and exercised on the iPhone 18 Pro simulator (iOS 27.2). The calculator, pager and local logic checks pass, and the GitHub workflow runs them and builds the app on Xcode 26. It has not yet been tested on a physical iPhone or on the iOS 17 runtime.
 
 ## What is implemented
 
