@@ -51,19 +51,6 @@ enum ConnectedService: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    var tint: Color {
-        switch self {
-        case .apple: .gray
-        case .spotify: Color(hex: 0x20C968)
-        case .google: Color(hex: 0x4285F4)
-        case .microsoft: Color(hex: 0x2C8CE5)
-        case .notion: Color(hex: 0x38383B)
-        case .discord: Color(hex: 0x697BF0)
-        case .telegram: Color(hex: 0x34A9E8)
-        case .openAI: Color(hex: 0x33A68C)
-        }
-    }
-
     var connectionKind: String {
         switch self {
         case .apple: "On-device permission"
@@ -823,20 +810,7 @@ private struct ConnectionsSummaryCard: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: 0x9E8AFF), Color(hex: 0x4D73F0)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                Image(systemName: "person.crop.circle.badge.checkmark")
-                    .font(.system(size: 29, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 66, height: 66)
+            AppMark(app: .accounts, size: 62)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Swift UI Account Center")
@@ -844,9 +818,12 @@ private struct ConnectionsSummaryCard: View {
                 Text("\(store.connectedCount) services ready")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Label("Private by default", systemImage: "lock.fill")
-                    .font(.caption.bold())
-                    .foregroundStyle(.green)
+                HStack(spacing: 5) {
+                    Image(systemName: "lock.fill")
+                    Text("Private by default")
+                }
+                .font(.caption.bold())
+                .foregroundStyle(Instrument.success)
             }
 
             Spacer()
@@ -863,11 +840,7 @@ private struct ConnectionServiceRow: View {
 
     var body: some View {
         HStack(spacing: 13) {
-            Image(systemName: service.symbol)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 38, height: 38)
-                .background(service.tint, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            ServiceMark(symbol: service.symbol, size: 38)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(service.name)
@@ -882,7 +855,7 @@ private struct ConnectionServiceRow: View {
 
             if store.isConnected(service) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Instrument.success)
             } else {
                 Text("Set Up")
                     .font(.caption.bold())
@@ -906,12 +879,7 @@ struct ServiceConnectionDetail: View {
         List {
             Section {
                 VStack(spacing: 14) {
-                    Image(systemName: service.symbol)
-                        .font(.system(size: 34, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 78, height: 78)
-                        .background(service.tint, in: RoundedRectangle(cornerRadius: 23, style: .continuous))
-                        .shadow(color: service.tint.opacity(0.28), radius: 16, y: 8)
+                    ServiceMark(symbol: service.symbol, size: 78)
 
                     Text(service.name)
                         .font(.title2.bold())
@@ -952,6 +920,7 @@ struct ServiceConnectionDetail: View {
                     Button("Disconnect", role: .destructive) {
                         store.disconnect(service)
                     }
+                    .foregroundStyle(.red)
                 } else {
                     connectButton
                 }
@@ -966,7 +935,7 @@ struct ServiceConnectionDetail: View {
             if let message {
                 Section {
                     Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Instrument.signalText)
                 }
             }
         }
@@ -1059,7 +1028,7 @@ private struct ConnectionStatusPill: View {
             systemImage: store.isConnected(service) ? "checkmark.circle.fill" : "circle.dashed"
         )
         .font(.caption.bold())
-        .foregroundStyle(store.isConnected(service) ? .green : .secondary)
+        .foregroundStyle(store.isConnected(service) ? Instrument.success : .secondary)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(Color.primary.opacity(0.06), in: Capsule())
@@ -1192,13 +1161,7 @@ struct ConnectedServiceApp: View {
                 }
                 .padding(16)
             }
-            .background(
-                LinearGradient(
-                    colors: [service.tint.opacity(0.12), Color(uiColor: .systemBackground)],
-                    startPoint: .top,
-                    endPoint: .center
-                )
-            )
+            .background(Color(uiColor: .systemBackground))
             .navigationTitle(app.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1266,9 +1229,9 @@ struct ConnectedServiceApp: View {
                             .foregroundStyle(.secondary)
                             .frame(width: 20)
                         Image(systemName: "music.note")
-                            .foregroundStyle(service.tint)
+                            .foregroundStyle(Instrument.ink)
                             .frame(width: 34, height: 34)
-                            .background(service.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
+                            .background(Instrument.ground, in: RoundedRectangle(cornerRadius: 9))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(track.name)
                                 .font(.subheadline.bold())
@@ -1297,7 +1260,7 @@ struct ConnectedServiceApp: View {
         VStack(spacing: 13) {
             Image(systemName: store.isConnected(service) ? "checkmark.shield.fill" : "person.badge.key.fill")
                 .font(.system(size: 32))
-                .foregroundStyle(store.isConnected(service) ? .green : service.tint)
+                .foregroundStyle(store.isConnected(service) ? Instrument.success : Instrument.ink)
 
             Text(store.isConnected(service) ? "Connection Ready" : "Connect Your Account")
                 .font(.headline)
@@ -1319,7 +1282,7 @@ struct ConnectedServiceApp: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(InstrumentPrimaryButtonStyle())
         }
         .padding(18)
         .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 25, style: .continuous))
@@ -1382,14 +1345,7 @@ struct AIAssistantApp: View {
                     setupRequired
                 }
             }
-            .background(
-                LinearGradient(
-                    colors: [service.tint.opacity(0.12), Color(uiColor: .systemBackground)],
-                    startPoint: .top,
-                    endPoint: .center
-                )
-                .ignoresSafeArea()
-            )
+            .background(Color(uiColor: .systemBackground))
             .navigationTitle(app.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1437,7 +1393,7 @@ struct AIAssistantApp: View {
                         ForEach(messages) { message in
                             AIAssistantBubble(
                                 message: message,
-                                tint: service.tint
+                                tint: Instrument.ink
                             )
                             .id(message.id)
                         }
@@ -1503,7 +1459,7 @@ struct AIAssistantApp: View {
             Spacer()
             Image(systemName: "lock.fill")
                 .font(.caption)
-                .foregroundStyle(.green)
+                .foregroundStyle(Instrument.success)
         }
         .padding(15)
         .instrumentPanel(cornerRadius: 24)
@@ -1528,9 +1484,9 @@ struct AIAssistantApp: View {
             } label: {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Instrument.surface)
                     .frame(width: 42, height: 42)
-                    .background(service.tint, in: Circle())
+                    .background(Instrument.ink, in: Circle())
             }
             .disabled(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
             .opacity(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending ? 0.45 : 1)
@@ -1564,8 +1520,7 @@ struct AIAssistantApp: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(service.tint)
+                .buttonStyle(InstrumentPrimaryButtonStyle())
 
                 Label(
                     "Your key is stored in the iPhone Keychain. This app does not import your consumer chats.",
@@ -1630,12 +1585,12 @@ private struct AIAssistantBubble: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(message.text)
                     .font(.body)
-                    .foregroundStyle(message.role == .user ? .white : .primary)
+                    .foregroundStyle(message.role == .user ? Instrument.surface : .primary)
                     .textSelection(.enabled)
 
                 Text(message.createdAt.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
-                    .foregroundStyle(message.role == .user ? .white.opacity(0.70) : .secondary)
+                    .foregroundStyle(message.role == .user ? Instrument.surface.opacity(0.7) : .secondary)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)

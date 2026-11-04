@@ -1,4 +1,26 @@
+import AVFoundation
 import SwiftUI
+
+/// The real flashlight, on hardware that has one.
+@MainActor
+enum DeviceTorch {
+    /// Kept, since view bodies read this while they track a finger.
+    static let isAvailable = AVCaptureDevice.default(for: .video)?.hasTorch == true
+
+    static var isOn: Bool {
+        isAvailable && AVCaptureDevice.default(for: .video)?.torchMode == .on
+    }
+
+    /// Returns whether the flashlight is on afterward.
+    @discardableResult
+    static func toggle() -> Bool {
+        guard isAvailable, let device = AVCaptureDevice.default(for: .video) else { return false }
+        guard (try? device.lockForConfiguration()) != nil else { return device.torchMode == .on }
+        device.torchMode = device.torchMode == .on ? .off : .on
+        device.unlockForConfiguration()
+        return device.torchMode == .on
+    }
+}
 
 struct SystemShell: View {
     @EnvironmentObject private var system: IndicaSystem
@@ -218,7 +240,8 @@ struct SystemStatusBar: View {
 
     var body: some View {
         HStack {
-            TimelineView(.periodic(from: .now, by: 30)) { context in
+            // On the minute: a fixed 30-second period could read a minute behind.
+            TimelineView(.everyMinute) { context in
                 Text(context.date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)))
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
             }
@@ -246,6 +269,7 @@ struct SystemStatusBar: View {
 private struct LockScreen: View {
     @EnvironmentObject private var system: IndicaSystem
     @State private var dragOffset: CGFloat = 0
+    @State private var torchOn = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -282,7 +306,11 @@ private struct LockScreen: View {
 
             VStack(spacing: 8) {
                 ForEach(system.notifications.prefix(2)) { notification in
-                    NotificationCard(notification: notification, compact: true)
+                    NotificationCard(
+                        notification: notification,
+                        compact: true,
+                        showsPreview: system.showsNotificationPreviews
+                    )
                 }
             }
             .padding(.horizontal, 20)
@@ -290,13 +318,17 @@ private struct LockScreen: View {
             Spacer(minLength: 22)
 
             HStack {
-                LockActionButton(symbol: "flashlight.on.fill") {}
+                LockActionButton(symbol: "flashlight.on.fill", label: "Flashlight", isOn: torchOn) {
+                    torchOn = DeviceTorch.toggle()
+                }
+                    .disabled(!DeviceTorch.isAvailable)
+                    .opacity(DeviceTorch.isAvailable ? 1 : 0.4)
                 Spacer()
                 Text("Swipe up to open")
                     .font(.footnote)
                     .foregroundStyle(system.wallpaper.secondaryForeground)
                 Spacer()
-                LockActionButton(symbol: "camera") {
+                LockActionButton(symbol: "camera", label: "Camera") {
                     system.unlock()
                     Task {
                         try? await Task.sleep(for: .milliseconds(320))
@@ -309,6 +341,7 @@ private struct LockScreen: View {
             .padding(.bottom, 34)
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .onAppear { torchOn = DeviceTorch.isOn }
         .offset(y: dragOffset)
         .gesture(
             DragGesture(minimumDistance: 10)
@@ -335,17 +368,25 @@ private struct LockScreen: View {
 
 private struct LockActionButton: View {
     let symbol: String
+    let label: String
+    /// Nil for a button with no on or off state.
+    var isOn: Bool?
     let action: () -> Void
 
     var body: some View {
+        let on = isOn == true
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 18, weight: .regular))
-                .foregroundStyle(Instrument.ink)
+                .foregroundStyle(on ? Instrument.surface : Instrument.ink)
                 .frame(width: 48, height: 48)
-                .instrumentPanel(cornerRadius: 12)
+                .background(on ? Instrument.ink : Instrument.surface, in: shape)
+                .overlay { shape.strokeBorder(Instrument.edge, lineWidth: Instrument.hairline) }
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(label)
+        .accessibilityValue(isOn.map { $0 ? "On" : "Off" } ?? "")
     }
 }
 
@@ -382,7 +423,11 @@ private struct HomeScreen: View {
                                     SearchWidget { openSearchUnlessSwiped() }
                                         .padding(.horizontal, metrics.horizontalPadding)
                                 } else {
-                                    LibraryHeader(verticalPadding: metrics.ledgerVerticalPadding)
+                                    LibraryHeader(
+                                        title: pageIndex == 2 ? "Connections" : "Utilities",
+                                        detail: pageIndex == 2 ? "Services you can connect" : "Tools and extras",
+                                        verticalPadding: metrics.ledgerVerticalPadding
+                                    )
                                         .padding(.horizontal, metrics.horizontalPadding)
                                 }
 
@@ -398,7 +443,12 @@ private struct HomeScreen: View {
                                             app: app,
                                             isEditing: system.isEditingHome,
                                             size: metrics.iconSize,
-                                            cancelsPress: pager.isSwiping
+                                            cancelsPress: pager.isSwiping,
+                                            onRemove: {
+                                                // The release of a swipe isn't a tap here either.
+                                                guard !pager.suppressesTap else { return }
+                                                removeFromHome(app)
+                                            }
                                         ) {
                                             // The release of a swipe or long press isn't a tap.
                                             guard !system.isEditingHome, !pager.suppressesTap else { return }
@@ -423,7 +473,28 @@ private struct HomeScreen: View {
                     pageCount: system.homePages.count,
                     onSearch: { isSearching = true }
                 )
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, metrics.pageIndicatorPadding)
+                // Here, not at the top right, where it would cover the ledger.
+                .overlay(alignment: .trailing) {
+                    if system.isEditingHome {
+                        Button {
+                            HapticEngine.play(.selection, enabled: system.hapticsEnabled)
+                            withAnimation(Instrument.motion) {
+                                system.isEditingHome = false
+                            }
+                        } label: {
+                            Text("Done")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Instrument.ink)
+                                .padding(.horizontal, 16)
+                                .frame(minHeight: 44)
+                                .instrumentPanel(cornerRadius: 18)
+                                .contentShape(Rectangle())
+                        }
+                        .padding(.trailing, metrics.horizontalPadding)
+                    }
+                }
 
                 InstrumentRule(color: system.wallpaper.ruleForeground)
                     .padding(.horizontal, metrics.horizontalPadding)
@@ -438,6 +509,7 @@ private struct HomeScreen: View {
                             showsLabel: false,
                             isInDock: true
                         ) {
+                            guard !system.isEditingHome else { return }
                             system.open(app)
                         }
                     }
@@ -462,26 +534,6 @@ private struct HomeScreen: View {
                 pager.pageCount = system.homePages.count
                 pager.homeDidAppear()
             }
-            .overlay(alignment: .topTrailing) {
-                if system.isEditingHome {
-                    Button {
-                        HapticEngine.play(.selection, enabled: system.hapticsEnabled)
-                        withAnimation(Instrument.motion) {
-                            system.isEditingHome = false
-                        }
-                    } label: {
-                        Text("Done")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Instrument.ink)
-                            .padding(.horizontal, 16)
-                            .frame(minHeight: 44)
-                            .instrumentPanel(cornerRadius: 18)
-                            .contentShape(Rectangle())
-                    }
-                    .padding(.top, 64)
-                    .padding(.trailing, 18)
-                }
-            }
             .foregroundStyle(system.wallpaper.foreground)
             // Home is a fixed layout with no scrolling, like the iOS Home Screen.
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
@@ -490,6 +542,13 @@ private struct HomeScreen: View {
         .sheet(isPresented: $isSearching) {
             AppSearchView()
                 .environmentObject(system)
+        }
+    }
+
+    private func removeFromHome(_ app: BuiltInApp) {
+        HapticEngine.play(.selection, enabled: system.hapticsEnabled)
+        withAnimation(Instrument.motion) {
+            _ = system.hiddenHomeApps.insert(app)
         }
     }
 
@@ -859,14 +918,16 @@ private struct AppSearchView: View {
 
 private struct LibraryHeader: View {
     @EnvironmentObject private var system: IndicaSystem
+    let title: String
+    let detail: String
     var verticalPadding: CGFloat = 12
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("App Library")
+            Text(title)
                 .font(.title3.weight(.semibold))
                 .tracking(-0.3)
-            Text("Utilities and extras")
+            Text(detail)
                 .font(.footnote)
                 .foregroundStyle(system.wallpaper.secondaryForeground)
         }
@@ -887,23 +948,25 @@ private struct AppIcon: View {
     var showsLabel = true
     var isInDock = false
     var cancelsPress = false
+    /// Nil for an icon that can't be removed, like one in the dock.
+    var onRemove: (() -> Void)?
     let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @State private var wiggle = false
+
+    private var reducesMotion: Bool { system.reduceMotion || systemReduceMotion }
+
+    private func startWiggle() {
+        guard !reducesMotion else { return }
+        withAnimation(.easeInOut(duration: 0.13).repeatForever(autoreverses: true)) {
+            wiggle = true
+        }
+    }
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 5) {
                 AppMark(app: app, size: size, isInverted: isInDock, isOnWallpaper: true)
-                    .overlay(alignment: .topLeading) {
-                        if isEditing {
-                            Image(systemName: "minus")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(Instrument.surface)
-                                .frame(width: 20, height: 20)
-                                .background(Instrument.ink, in: Circle())
-                                .offset(x: -6, y: -6)
-                        }
-                    }
 
                 if showsLabel && system.showAppLabels {
                     Text(app.name)
@@ -919,12 +982,34 @@ private struct AppIcon: View {
         }
         .buttonStyle(PressableButtonStyle(cancelsPress: cancelsPress))
         .accessibilityLabel(app.name)
-        .rotationEffect(.degrees(isEditing ? (wiggle ? 1.5 : -1.5) : 0))
+        .accessibilityActions {
+            if let onRemove {
+                Button("Remove from Home Screen", action: onRemove)
+            }
+        }
+        // Outside the icon's button: a button inside another's label can't be relied on.
+        .overlay(alignment: .top) {
+            if isEditing, let onRemove {
+                Button(action: onRemove) {
+                    Image(systemName: "minus")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Instrument.surface)
+                        .frame(width: 20, height: 20)
+                        .background(Instrument.ink, in: Circle())
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .offset(x: -size / 2, y: -22 + 6)
+                .accessibilityLabel("Remove \(app.name) from Home Screen")
+            }
+        }
+        .rotationEffect(.degrees(isEditing && !reducesMotion ? (wiggle ? 1.5 : -1.5) : 0))
+        // On appear as well: icons rebuilt during editing wouldn't see a change.
+        .onAppear { if isEditing { startWiggle() } }
         .onChange(of: isEditing) { _, newValue in
             if newValue {
-                withAnimation(.easeInOut(duration: 0.13).repeatForever(autoreverses: true)) {
-                    wiggle.toggle()
-                }
+                startWiggle()
             } else {
                 wiggle = false
             }
@@ -968,6 +1053,8 @@ private struct AppHost: View {
                 HybridAppNavigationBar()
             }
         }
+        // Keeps row text from taking the accent. It also turns destructive buttons
+        // plain, so those that sit in a row set their own red.
         .foregroundStyle(.primary)
     }
 }
@@ -1307,6 +1394,7 @@ private struct MiniAppMark: View {
 
 private struct ControlCenterOverlay: View {
     @EnvironmentObject private var system: IndicaSystem
+    @State private var torchOn = false
 
     var body: some View {
         ZStack {
@@ -1341,6 +1429,7 @@ private struct ControlCenterOverlay: View {
                         HStack(spacing: 12) {
                             ControlToggle(title: "Airplane Mode", symbol: "airplane", isOn: $system.airplaneMode)
                             ControlToggle(title: "Cellular", symbol: "antenna.radiowaves.left.and.right", isOn: .constant(true))
+                                .disabled(true)
                         }
                         HStack(spacing: 12) {
                             ControlToggle(title: "Wi-Fi", symbol: "wifi", isOn: $system.wifiEnabled)
@@ -1372,18 +1461,28 @@ private struct ControlCenterOverlay: View {
                     VerticalSlider(title: "Volume", value: $system.volume, symbol: "speaker.wave.2")
                     VStack(spacing: 12) {
                         WideControl(title: "Focus", symbol: "moon", isOn: $system.isFocusEnabled)
-                        WideControl(title: "Screen", symbol: "rectangle.inset.filled")
+                        WideControl(title: "Display", symbol: "rectangle.inset.filled") { system.open(.settings) }
                     }
                 }
                 .padding(.horizontal, 20)
 
                 HStack(spacing: 12) {
-                    SmallControl(symbol: "flashlight.on.fill")
-                    SmallControl(symbol: "timer")
-                    SmallControl(symbol: "camera") { system.open(.camera) }
-                    SmallControl(symbol: "waveform") { system.open(.voiceMemos) }
+                    SmallControl(title: "Flashlight", symbol: "flashlight.on.fill", isOn: torchOn) {
+                        torchOn = DeviceTorch.toggle()
+                    }
+                        .disabled(!DeviceTorch.isAvailable)
+                        .opacity(DeviceTorch.isAvailable ? 1 : 0.4)
+                    SmallControl(title: "Clock", symbol: "timer") { system.open(.clock) }
+                    SmallControl(title: "Camera", symbol: "camera") { system.open(.camera) }
+                    SmallControl(title: "Voice Memos", symbol: "waveform") { system.open(.voiceMemos) }
                 }
                 .padding(.horizontal, 20)
+
+                Text("The switches, sliders and player here are simulated. They don't change this iPhone.")
+                    .font(.footnote)
+                    .foregroundStyle(Instrument.inkSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
 
                 Spacer()
 
@@ -1393,6 +1492,9 @@ private struct ControlCenterOverlay: View {
                 .padding(.bottom, 26)
             }
             .foregroundStyle(Instrument.ink)
+            // A fixed layout with no scrolling, like Home.
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .onAppear { torchOn = DeviceTorch.isOn }
         }
     }
 }
@@ -1474,17 +1576,20 @@ private struct WideControl: View {
     let title: String
     let symbol: String
     var isOn: Binding<Bool>?
+    var action: (() -> Void)?
 
-    init(title: String, symbol: String, isOn: Binding<Bool>? = nil) {
+    init(title: String, symbol: String, isOn: Binding<Bool>? = nil, action: (() -> Void)? = nil) {
         self.title = title
         self.symbol = symbol
         self.isOn = isOn
+        self.action = action
     }
 
     var body: some View {
         let on = isOn?.wrappedValue == true
         Button {
             isOn?.wrappedValue.toggle()
+            action?()
         } label: {
             HStack(spacing: 11) {
                 Image(systemName: symbol)
@@ -1507,18 +1612,27 @@ private struct WideControl: View {
 }
 
 private struct SmallControl: View {
+    let title: String
     let symbol: String
+    /// Nil for a shortcut with no on or off state.
+    var isOn: Bool?
     var action: () -> Void = {}
 
     var body: some View {
+        let on = isOn == true
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 18))
+                .foregroundStyle(on ? Instrument.surface : Instrument.ink)
                 .frame(maxWidth: .infinity)
                 .frame(height: 62)
-                .instrumentPanel()
+                .background(on ? Instrument.ink : Instrument.surface, in: shape)
+                .overlay { shape.strokeBorder(Instrument.edge, lineWidth: Instrument.hairline) }
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityValue(isOn.map { $0 ? "On" : "Off" } ?? "")
     }
 }
 
@@ -1565,7 +1679,10 @@ private struct NotificationCenterOverlay: View {
                 ScrollView {
                     LazyVStack(spacing: 10) {
                         ForEach(system.notifications) { notification in
-                            NotificationCard(notification: notification)
+                            NotificationCard(
+                                notification: notification,
+                                showsPreview: system.showsNotificationPreviews
+                            )
                                 .onTapGesture {
                                     system.open(notification.app)
                                 }
@@ -1593,6 +1710,8 @@ private struct NotificationCenterOverlay: View {
 private struct NotificationCard: View {
     let notification: SystemNotification
     var compact = false
+    /// From the Show Previews setting. The Lock Screen counts as locked.
+    var showsPreview = true
 
     var body: some View {
         HStack(alignment: .top, spacing: 11) {
@@ -1600,7 +1719,7 @@ private struct NotificationCard: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text(notification.title)
+                    Text(showsPreview ? notification.title : notification.app.name)
                         .font(.subheadline.weight(.semibold))
                     Spacer()
                     // In place of a time: a sample's time isn't real either.
@@ -1614,7 +1733,7 @@ private struct NotificationCard: View {
                             .foregroundStyle(Instrument.inkSecondary)
                     }
                 }
-                Text(notification.body)
+                Text(showsPreview ? notification.body : "Notification")
                     .font(.footnote)
                     .lineLimit(compact ? 1 : 3)
                     .foregroundStyle(Instrument.inkSecondary)

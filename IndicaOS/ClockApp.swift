@@ -10,7 +10,10 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        // A one-time alarm that fires while the app is open turns its switch off now,
+        // rather than the next time the app comes back. Not awaited: the banner shouldn't wait.
+        Task { @MainActor in await ClockStore.shared.refresh() }
+        return [.banner, .sound]
     }
 }
 
@@ -194,7 +197,8 @@ final class ClockStore: ObservableObject {
             guard isStillOn(alarm.id) else { return }
             let content = UNMutableNotificationContent()
             content.title = alarm.label.isEmpty ? "Alarm" : alarm.label
-            content.body = "Alarm"
+            let fireTime = Calendar.current.date(from: DateComponents(hour: alarm.hour, minute: alarm.minute))
+            content.body = fireTime?.formatted(date: .omitted, time: .shortened) ?? ""
             content.sound = .default
             // 0 is the one-time alarm; 1 to 7 are weekly repeats.
             let days: [Int] = alarm.weekdays.isEmpty ? [0] : alarm.weekdays.sorted()
@@ -519,6 +523,7 @@ private struct AlarmEditor: View {
                             store.delete(alarmID: alarm.id)
                             dismiss()
                         }
+                        .foregroundStyle(.red)
                     }
                 }
             }

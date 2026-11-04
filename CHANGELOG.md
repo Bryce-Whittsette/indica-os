@@ -10,10 +10,16 @@
 - Springs in the shell no longer overshoot.
 - The Lock Screen shows your real next event, in place of a made-up event and step count.
 - The concept demo label has its own strip above the app bar.
+- Control Center says its switches and sliders are simulated, and so do Settings' Airplane Mode, Bluetooth, Focus and Brightness. The flashlight buttons use the real flashlight where there is one, show when it's on, and are dimmed where there isn't. The timer shortcut opens Clock, "Screen" is now "Display" and opens Settings, and the cellular switch can't be tapped.
+- The Show Previews setting now works. "When Unlocked" shows only the app name and "Notification" while locked, including over the Lock Screen, and "Never" does so everywhere.
+- VPN, Private Relay and Lockdown Mode say they're simulated, and Accessibility says Increase Contrast and Button Shapes aren't applied yet. Play Test Sound plays a real system sound.
+- Connections matches Instrument: plain service tiles, no colored backgrounds, and solid ink main buttons.
+- Home's later pages are titled Connections and Utilities. Both said "App Library".
 - Sample notifications say SAMPLE in place of a made-up time, and the count says samples rather than recent. All of them are seeded: Swift UI doesn't read other apps' notifications.
 - A pull from the top only counts when it's mostly downward and starts within 20 pt of the status bar, so a page swipe that begins on the ledger can't also open an overlay. Drags inside an open overlay no longer open another or unlock.
 
 ### Added
+- You can remove apps from the Home Screen. Press and hold, then tap the minus on an app. It stays in Search, and Settings > Home Screen can add it back. Rearranging isn't available yet.
 - **Swift UI has a logo.** The Trace mark is one drag drawn as an S, with a dot where the finger is now. The wordmark is original lettering on a monospaced grid, with a bracket that measures the space in the name. The app icon has default, dark and tinted versions, and the boot screen uses the new mark, though it only shows for a moment. Masters, exports and usage rules are in `docs/brand`.
 - Published a GitHub wiki with setup instructions, app and navigation guides, connection setup, storage and privacy details, a development guide, and troubleshooting.
 
@@ -29,6 +35,15 @@
 - Pulling down from the status bar now opens Notifications or Control Center. The top of the screen ignored touches, so the pull only worked from just below it.
 - The concept demo label no longer covers the Messages composer.
 - The Apps row in Settings has its icon back.
+- Calculator keys fill the screen and are easy to hit. They had shrunk to the size of their text, so AC showed as "...".
+- Canvas's title and status bar are readable in dark.
+- Weather shows the real next days and hours, and "Wednesday" no longer breaks across two lines. Today was followed by the wrong weekday.
+- Reminders has an empty state, ignores blank entries and adds on Return.
+- Delete and Disconnect buttons in rows are red again.
+- White text on the orange accent failed contrast in dark, so main buttons no longer use it.
+- A one-time alarm that goes off while Clock is open turns its switch off right away, and its notification shows the time instead of saying "Alarm" twice.
+- The status bar's time changes on the minute. It could read a minute behind.
+- Done on the Home Screen no longer covers the weather cell. Dock icons don't open apps while editing, and icons no longer stay tilted after returning from an app.
 - Calendar days no longer wrap or run together at the largest text sizes.
 - Control Center has a bar that closes it, and every overlay closes with the VoiceOver escape gesture. It could only be closed by tapping the background, which VoiceOver can't reach.
 - VoiceOver labels and values for dock icons, Control Center toggles and the home bar. Brightness and Volume are adjustable. Calendar announces today.

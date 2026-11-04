@@ -1,3 +1,4 @@
+import AudioToolbox
 import SwiftUI
 
 private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
@@ -137,6 +138,8 @@ struct IndicaSettingsApp: View {
                             )
                         }
                         settingsLinks(connectionRoutes)
+                    } footer: {
+                        Text("Settings here change Swift UI only, never this iPhone. Airplane Mode and some others are simulated and don't change anything yet.")
                     }
                 }
 
@@ -328,7 +331,7 @@ private struct SettingsConnectionsView: View {
             ServiceConnectionDetail(service: service)
         } label: {
             HStack(spacing: 12) {
-                SettingsGlyph(symbol: service.symbol, tint: service.tint)
+                SettingsGlyph(symbol: service.symbol, tint: .gray)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(service.name)
                     Text(
@@ -393,6 +396,8 @@ private struct BluetoothSettingsView: View {
         Form {
             Section {
                 Toggle("Bluetooth", isOn: $system.bluetoothEnabled)
+            } footer: {
+                Text("This switch and the devices below are simulated. They don't change this iPhone's Bluetooth.")
             }
 
             if system.bluetoothEnabled {
@@ -460,10 +465,14 @@ private struct VPNSettingsView: View {
                 Toggle("Connect On Demand", isOn: $connectOnDemand)
             }
 
-            Section("Configuration") {
+            Section {
                 LabeledContent("Name", value: "Swift UI Private")
                 LabeledContent("Type", value: "WireGuard")
                 LabeledContent("Status", value: enabled ? "Connected" : "Not Connected")
+            } header: {
+                Text("Configuration")
+            } footer: {
+                Text("Simulated. No VPN is set up, and network traffic isn't changed.")
             }
         }
         .navigationTitle("VPN")
@@ -518,14 +527,18 @@ private struct NotificationHistorySettingsView: View {
     var body: some View {
         List {
             ForEach(system.notifications) { notification in
+                // This screen is reached unlocked, so only Never hides anything here.
+                let hidden = system.notificationPreviews == .never
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(notification.title)
+                    Text(hidden ? notification.app.name : notification.title)
                         .font(.headline)
-                    Text(notification.body)
+                    Text(hidden ? "Notification" : notification.body)
                         .font(.subheadline)
-                    Text(notification.app.name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if !hidden {
+                        Text(notification.app.name)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .onDelete { offsets in
@@ -595,7 +608,8 @@ private struct SoundsSettingsView: View {
             }
 
             Section {
-                Button("Play Test Sound") {}
+                // A standard system alert sound. It follows the ringer switch, as alerts do.
+                Button("Play Test Sound") { AudioServicesPlaySystemSound(1007) }
                     .disabled(!system.soundsEnabled)
             }
         }
@@ -613,6 +627,8 @@ private struct FocusSettingsView: View {
             Section {
                 Toggle("Focus Status", isOn: $system.isFocusEnabled)
                 Toggle("Share Across Devices", isOn: $shareAcrossDevices)
+            } footer: {
+                Text("Simulated. Focus is only changed in iOS Settings.")
             }
 
             Section("Schedules") {
@@ -657,13 +673,17 @@ private struct DisplaySettingsView: View {
                 .padding(.vertical, 4)
             }
 
-            Section("Brightness") {
+            Section {
                 HStack {
                     Image(systemName: "sun.min.fill")
                     Slider(value: $system.brightness)
                     Image(systemName: "sun.max.fill")
                 }
                 Toggle("True Tone", isOn: $trueTone)
+            } header: {
+                Text("Brightness")
+            } footer: {
+                Text("Simulated. These don't change the screen.")
             }
 
             Section("Text") {
@@ -748,8 +768,26 @@ private struct HomeScreenSettingsView: View {
                 Toggle("Show App Labels", isOn: $system.showAppLabels)
             }
 
+            if !system.hiddenHomeApps.isEmpty {
+                Section("Removed from Home Screen") {
+                    ForEach(system.hiddenHomeAppsInOrder) { app in
+                        HStack(spacing: 12) {
+                            AppMark(app: app, size: 34)
+                            Text(app.name)
+                            Spacer()
+                            Button("Add Back") {
+                                withAnimation(Instrument.motion) {
+                                    _ = system.hiddenHomeApps.remove(app)
+                                }
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                }
+            }
+
             Section {
-                Text("Press and hold the Home Screen to enter edit mode. Swipe between pages for built-in apps, connected daily apps, and utilities.")
+                Text("Press and hold the Home Screen, then tap the minus on an app to remove it. It stays in Search and can be added back here. Rearranging isn't available yet.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -874,7 +912,7 @@ private struct LockScreenSettingsView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(InstrumentPrimaryButtonStyle())
             }
             .padding()
         }
@@ -927,7 +965,7 @@ private struct AccessibilitySettingsView: View {
 
     var body: some View {
         Form {
-            Section("Vision") {
+            Section {
                 Toggle("Bold Text", isOn: $system.boldText)
                 Toggle("Increase Contrast", isOn: $increaseContrast)
                 Toggle("Button Shapes", isOn: $buttonShapes)
@@ -935,6 +973,10 @@ private struct AccessibilitySettingsView: View {
                     Text("Text Size")
                     Slider(value: $system.textScale, in: 0.82...1.25)
                 }
+            } header: {
+                Text("Vision")
+            } footer: {
+                Text("Increase Contrast and Button Shapes aren't applied yet. The same settings in iOS still work.")
             }
 
             Section("Motion") {
@@ -963,9 +1005,13 @@ private struct PrivacySettingsView: View {
                 Toggle("Share Swift UI Analytics", isOn: $system.analyticsSharing)
             }
 
-            Section("Network Privacy") {
+            Section {
                 Toggle("Private Relay", isOn: $privateRelay)
                 Toggle("Lockdown Mode", isOn: $lockdownMode)
+            } header: {
+                Text("Network Privacy")
+            } footer: {
+                Text("Simulated. These don't change this iPhone's privacy or network settings.")
             }
 
             Section("App Privacy") {
@@ -1273,6 +1319,7 @@ private struct ResetSettingsView: View {
                 Button("Remove Sample Content", role: .destructive) {
                     showingEraseContent = true
                 }
+                .foregroundStyle(.red)
             } footer: {
                 Text("Reset All Settings keeps notes, messages, reminders, journal entries, drawings, and account credentials. Remove Sample Content deletes the example notes, reminders, messages, and journal entry included with the app, even if you checked one off, and clears the simulated camera captures. Notes you edited and anything you added yourself are kept.")
             }
@@ -1401,7 +1448,7 @@ private struct DeveloperIntegrationView: View {
                         ServiceConnectionDetail(service: service)
                     } label: {
                         HStack {
-                            SettingsGlyph(symbol: service.symbol, tint: service.tint)
+                            SettingsGlyph(symbol: service.symbol, tint: .gray)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(service.name)
                                 Text(service.connectionKind)

@@ -131,6 +131,23 @@ struct AppMark: View {
     }
 }
 
+/// A flat tile for a connected service that isn't an app on Home, using its SF Symbol.
+struct ServiceMark: View {
+    let symbol: String
+    var size: CGFloat = 38
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+        Image(systemName: symbol)
+            .font(.system(size: size * 0.45))
+            .foregroundStyle(Instrument.ink)
+            .frame(width: size, height: size)
+            .background(Instrument.surface, in: shape)
+            .overlay { shape.strokeBorder(Instrument.edge, lineWidth: Instrument.hairline) }
+            .accessibilityHidden(true)
+    }
+}
+
 /// What's inside a tile: a live value, a monogram, or a line glyph.
 private struct AppGlyph: View {
     let app: BuiltInApp

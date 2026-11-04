@@ -37,7 +37,7 @@ Semantic tokens for both appearances. Every pair below is measured in CI: 4.5:1 
 | `signalText` | `#B8330A` | `#FF6A36` | The accent as small text |
 | `success` | `#1B7F4B` | `#45C486` | Success only |
 
-Signal means "this is current or needs you." It isn't decoration, and it isn't error: errors keep the system red. A selected or on control that the shell draws is a solid `ink` block, not signal. iOS controls such as Toggle take the accent, since an ink Toggle loses its white knob in dark.
+Signal means "this is current or needs you." It isn't decoration, and it isn't error: errors keep the system red. A selected or on control that the shell draws is a solid `ink` block, not signal, and so is a main action on a Swift UI surface (`InstrumentPrimaryButtonStyle`), because white on the accent fails contrast in dark. Apps that reproduce an iOS app keep iOS's blue for theirs. iOS controls such as Toggle take the accent, since an ink Toggle loses its white knob in dark.
 
 The default accent, which tints controls across the app, is Signal in its text form. Calendar and Search override it with `ink` where a whole screen of controls would otherwise turn orange. Signal as text reaches 4.5:1 only on Instrument's own ground, so on gradient wallpapers the ledger uses the plain foreground. The earlier accents stay in Settings.
 
@@ -87,5 +87,5 @@ Direct and exact. "Saved on this iPhone. Not synced with the iOS Calendar." "Not
 ## Not done yet
 
 - IBM Plex Mono isn't bundled.
-- Connections keeps its colored service tiles inside the screen, which aren't restyled. Clock, Files and Voice Memos are real but still use system styling.
+- Clock, Files and Voice Memos are real but still use system styling.
 - The README screenshots still show v0.2.0.

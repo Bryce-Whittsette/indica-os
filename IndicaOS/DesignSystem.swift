@@ -73,3 +73,16 @@ extension View {
             }
     }
 }
+
+/// The main action on a Swift UI screen: a solid ink block. White text on the accent
+/// fails contrast in dark, so primary actions don't use it. Give the label its own padding.
+struct InstrumentPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(Instrument.surface)
+            .background(Instrument.ink, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(Instrument.press, value: configuration.isPressed)
+    }
+}

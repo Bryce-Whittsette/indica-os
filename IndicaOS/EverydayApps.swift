@@ -30,19 +30,41 @@ struct CalculatorApp: View {
                         Button {
                             calculator.tap(key)
                         } label: {
-                            Text(key)
-                                .font(.system(size: 27, weight: .medium, design: .rounded))
-                                .foregroundStyle(keyColor(key))
-                                .frame(maxWidth: .infinity)
+                            // The circle sets the size and the text sits on it, so a key
+                            // fills its column instead of shrinking to fit its text.
+                            Circle()
+                                .fill(keyBackground(key))
                                 .aspectRatio(1, contentMode: .fit)
-                                .background(keyBackground(key), in: Circle())
+                                .overlay {
+                                    Text(key)
+                                        .font(.system(size: 34, weight: .regular, design: .rounded))
+                                        .foregroundStyle(keyColor(key))
+                                }
+                                .contentShape(Circle())
                         }
-                        .buttonStyle(PressableButtonStyle())
+                        .buttonStyle(PressableButtonStyle(scale: 0.96))
+                        .accessibilityLabel(keyLabel(key))
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
             }
+        }
+    }
+
+    private func keyLabel(_ key: String) -> String {
+        switch key {
+        case "AC": "All clear"
+        case "±": "Plus or minus"
+        case "%": "Percent"
+        case "÷": "Divide"
+        case "×": "Multiply"
+        case "−": "Minus"
+        case "+": "Plus"
+        case "=": "Equals"
+        case ".": "Decimal point"
+        case "⌫": "Delete"
+        default: key
         }
     }
 
@@ -570,6 +592,7 @@ struct FindApp: View {
                 HStack {
                     Button("Directions") {}
                         .buttonStyle(.borderedProminent)
+                        .tint(.blue)
                     Button("Play Sound") {}
                         .buttonStyle(.bordered)
                     Spacer()
@@ -787,6 +810,7 @@ struct MediaCatalogApp: View {
                         saved.insert(item)
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                     Spacer()
                 }
                 .padding(28)
@@ -1067,7 +1091,8 @@ private struct CanvasApp: View {
                         )
                     }
                 }
-                .background(Color(hex: 0xF8F4EC))
+                // Stops at the safe area, so the bar above stays legible in dark.
+                .background(Color(hex: 0xF8F4EC), ignoresSafeAreaEdges: [])
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
@@ -1181,6 +1206,7 @@ private struct PasswordsApp: View {
                         .foregroundStyle(.secondary)
                     Button("Unlock Demo Vault") { unlocked = true }
                         .buttonStyle(.borderedProminent)
+                        .tint(.blue)
                     Spacer()
                 }
             } else {

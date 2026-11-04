@@ -35,7 +35,7 @@ Evidence labels: **sim** means scripted touches on the iPhone 18 Pro simulator (
 | Page scrub | Hold pill 280 ms, then 44 pt per page | Pages and the ruler follow continuously. Reversing moves back, nothing queues | Settles on the nearest page, no projection | System cancel settles | Medium on hold, selection per page | Next and Previous page actions on the pill | Sim: mid-page and settle. Source: reversal |
 | Search pill tap | Release within 10 pt, before 280 ms | Scales to 0.97 on touch-down | Opens search | Moving cancels | Selection | Default action | Sim |
 | Icon press | Touch-down | Scales immediately | Opens on release | Cancelled when the touch becomes a page swipe or a long press | Light on open | VoiceOver button | Sim: opens, flick doesn't open. Source: press cancel |
-| Home editing | 0.52 s hold on the grid | Icons wiggle | Done, or hold again | Moving 10 pt cancels | Rigid | Not provided yet | Source |
+| Home editing | 0.52 s hold on the grid | Icons wiggle and show a minus | Minus removes the app from Home, and Done ends editing | Moving 10 pt cancels the hold | Rigid, then selection | VoiceOver action on each icon, with no need to enter editing. Settings adds apps back | Sim: hold, remove, Done, relaunch, Add Back, and a swipe starting on a minus doesn't remove. VoiceOver action: source only |
 | Switcher close | Upward drag | Card follows the finger | Closes past 130 pt or on a fast flick, otherwise springs back | System cancel restores | Light | Close action per card | Sim: partial and full from the lower card. Source: rapid flicks |
 | Switcher move | Sideways drag | Row follows, resists at the ends | Settles on the predicted card | System cancel restores | None | Three-finger scroll | Sim |
 | App to Home | Bar drag or tap | Bar lifts slightly | Goes Home past 30 pt | Short drag springs back | Selection | Home button | Sim: tap. Swipe not rerun since M1 |
@@ -44,4 +44,4 @@ Evidence labels: **sim** means scripted touches on the iPhone 18 Pro simulator (
 
 ## Not built or not audited yet
 
-Long-press icon menus, icon rearranging, scroll boundary behavior inside apps, app open and return origin (apps currently scale from the center, not from their icon), and interactive back navigation. The transition into an app also shows an empty wallpaper frame on the simulator, which needs checking on a device.
+Long-press icon menus, icon rearranging (apps can only be removed and added back), scroll boundary behavior inside apps, app open and return origin (apps currently scale from the center, not from their icon), and interactive back navigation. The transition into an app also shows an empty wallpaper frame on the simulator, which needs checking on a device.
