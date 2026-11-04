@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 — 2026-11-03
+
+The Home Screen now follows your finger, the app is named Swift UI, and Calendar, Clock, Files and Voice Memos work for real. The Instrument visual design is selected but not built, so the look is unchanged.
 
 ### Added
 - The Home Screen pages now follow your finger. Swiping and scrubbing share one position, so the pages move continuously, resist past the first and last page, carry your release speed into a settle, and can be caught mid-settle without jumping.
@@ -39,7 +41,7 @@
 
 ### Known limitations
 - Alarms can't ring through Silent mode or Focus, because they're notifications. Recording stops when you leave the app. Calendar has no invitations, reminders or repeating events.
-- In the simulator, recording took about 5 seconds to start capturing. If a real iPhone does the same, the first seconds would be lost.
+- In the simulator, recording took 5 to 8 seconds to start capturing, and the app can be unresponsive during that time. If a real iPhone does the same, the first seconds would be lost.
 - With the keyboard up, the bottom-edge swipe can't start because that area belongs to the keyboard.
 - Switcher cards are still placeholders, not snapshots of the app.
 - Frame rate isn't established. On the iPhone 18 Pro simulator a settle drew about 7 to 10 frames, with the app's main thread mostly waiting on the simulator's renderer. It needs measuring on a physical iPhone.

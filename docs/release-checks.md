@@ -1,6 +1,6 @@
 # Release checks
 
-## Unreleased (`swift-ui/shell-gestures`)
+## v0.3.0 (2026-11-03)
 
 Simulator, iPhone 18 Pro, iOS 27.2, scripted touches, Debug build:
 
@@ -23,7 +23,8 @@ Still required:
 - [ ] Timer returning to the app after it finishes; relaunching mid-timer; Stopwatch and Alarm tabs in use.
 - [ ] Calendar edit, delete, all-day and multi-day in the app. The date rules have logic checks only.
 - [ ] Files: rename, delete, share, nested folders, large imports. Voice Memos: rename, share, denied access, a phone call interrupting, audible playback, and how long capture takes to start on a real iPhone.
-- [ ] Review fixes that have only been built, not run: Voice Memos interruption keeps the recording with its real duration and doesn't crash; alarms and timers saved with notifications off get scheduled once allowed; no stray notification after a quick Cancel, Pause or delete; pager recovers when an app opens mid-gesture; VoiceOver scroll direction on the pager and switcher.
+- [x] Voice Memos: a recording stopped normally saves the audio file's real duration (15.65 s in both).
+- [ ] Review fixes that have only been built, not run: Voice Memos interruption keeps the recording and doesn't crash; alarms and timers saved with notifications off get scheduled once allowed; no stray notification after a quick Cancel, Pause or delete; pager recovers when an app opens mid-gesture; VoiceOver scroll direction on the pager and switcher.
 - [ ] Two flicks within 220 ms in the switcher. Scripted touches can't send them that fast, so this rests on source review.
 - [ ] Edge deferral: the §21 repeated-gesture run on a physical iPhone (`docs/interactions.md`). The simulator's scripted edge swipe can't test it.
 - [ ] A system-cancelled gesture on the pager, pill and switcher, on a physical iPhone.
