@@ -92,7 +92,15 @@ The selected design system is built for the shell and Calendar (`DESIGN.md`). Ev
 
 Running it caught one defect that predates it: touches above the safe area never reached the shell's gesture, so a pull from the status bar did nothing. Gesture logging confirmed it, and the previous build behaved the same way.
 
-An independent read-only review found no blockers. Fixed from it: sample notifications unlabeled, no VoiceOver way out of Control Center, signal text under 4.5:1 on gradient wallpapers, a bare time on later days of multi-day events, Calendar cells under 44 pt at small text sizes, a pull band that ignored the safe area and had no axis check, Reduce Motion read only once by the wallpaper, and small panel buttons responding only on their text. Left open, and listed in the checks: dead controls that predate this work. For the owner to confirm: treating Calendar as an original surface.
+An independent read-only review found no blockers. Fixed from it: sample notifications unlabeled, no VoiceOver way out of Control Center, signal text under 4.5:1 on gradient wallpapers, a bare time on later days of multi-day events, Calendar cells under 44 pt at small text sizes, a pull band that ignored the safe area and had no axis check, Reduce Motion read only once by the wallpaper, and small panel buttons responding only on their text. The dead controls it listed were fixed in the app-wide audit below. For the owner to confirm: treating Calendar as an original surface.
+
+## M6: App-wide audit
+
+A sweep of the apps and flows the earlier milestones hadn't run. The evidence is in `docs/release-checks.md`.
+
+Defects found by running the app, all predating Instrument unless noted: Calculator keys shrunk to their text, with AC showing as "..."; Canvas's bar unreadable in dark; wrong weekdays and a broken "Wednesday" in Weather; a Home minus badge that did nothing; Connections' and Settings' accent buttons failing contrast in dark, from Instrument's new accent; and destructive buttons in rows that weren't red.
+
+One fix was tried and reversed. Removing the app host's foreground style restored destructive red everywhere, but turned ordinary row text orange in Notes and other apps. The style stays, and row buttons set their own red.
 
 ## Audit health score
 
