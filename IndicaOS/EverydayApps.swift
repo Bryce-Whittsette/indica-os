@@ -57,110 +57,6 @@ struct CalculatorApp: View {
     }
 }
 
-struct VoiceMemosApp: View {
-    @State private var recordingStart: Date?
-    @State private var recordings = [
-        ("Design thought", "0:18", "Today, 10:22 AM"),
-        ("Melody idea", "0:42", "Yesterday"),
-        ("Street ambience", "1:12", "Monday")
-    ]
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Text("Recording simulation · no microphone audio is captured")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding()
-                List {
-                    ForEach(Array(recordings.enumerated()), id: \.offset) { _, recording in
-                        VStack(alignment: .leading, spacing: 7) {
-                            HStack {
-                                Text(recording.0)
-                                    .font(.headline)
-                                Spacer()
-                                Text(recording.1)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Text(recording.2)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            WaveformBars(active: false)
-                                .frame(height: 28)
-                        }
-                        .padding(.vertical, 5)
-                    }
-                    .onDelete { recordings.remove(atOffsets: $0) }
-                }
-                .listStyle(.plain)
-
-                VStack(spacing: 12) {
-                    if let recordingStart {
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            let seconds = Int(context.date.timeIntervalSince(recordingStart))
-                            Text(String(format: "%02d:%02d", seconds / 60, seconds % 60))
-                                .font(.system(size: 28, weight: .regular, design: .monospaced))
-                        }
-                        WaveformBars(active: true)
-                            .frame(height: 42)
-                    }
-
-                    Button {
-                        toggleRecording()
-                    } label: {
-                        Circle()
-                            .stroke(.red, lineWidth: 3)
-                            .frame(width: 70, height: 70)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: recordingStart == nil ? 28 : 8)
-                                    .fill(.red)
-                                    .frame(width: recordingStart == nil ? 58 : 30, height: recordingStart == nil ? 58 : 30)
-                            }
-                    }
-                    .buttonStyle(PressableButtonStyle())
-                }
-                .padding(.vertical, 15)
-                .frame(maxWidth: .infinity)
-                .background(.bar)
-            }
-            .navigationTitle("Voice Memos")
-        }
-    }
-
-    private func toggleRecording() {
-        if let start = recordingStart {
-            let duration = max(1, Int(Date().timeIntervalSince(start)))
-            recordings.insert(("New Recording \(recordings.count + 1)", String(format: "0:%02d", duration), "Just now"), at: 0)
-            recordingStart = nil
-        } else {
-            recordingStart = .now
-        }
-    }
-}
-
-private struct WaveformBars: View {
-    let active: Bool
-    @State private var animate = false
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 3) {
-            ForEach(0..<28, id: \.self) { index in
-                Capsule()
-                    .fill(active ? Color.red : Color.secondary.opacity(0.45))
-                    .frame(width: 3, height: active ? (animate ? CGFloat(8 + (index * 13) % 31) : CGFloat(8 + (index * 7) % 23)) : CGFloat(7 + (index * 5) % 18))
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .onAppear {
-            if active {
-                withAnimation(.easeInOut(duration: 0.46).repeatForever(autoreverses: true)) {
-                    animate = true
-                }
-            }
-        }
-    }
-}
-
 struct TranslateApp: View {
     @State private var sourceLanguage = "English"
     @State private var targetLanguage = "Spanish"
@@ -395,7 +291,7 @@ struct WalletApp: View {
     @State private var showingPass = false
 
     private let cards: [(String, String, [Color])] = [
-        ("Indica Cash", "$842.16", [.black, Color(hex: 0x3D4050)]),
+        ("Swift UI Cash", "$842.16", [.black, Color(hex: 0x3D4050)]),
         ("Metro Pass", "Unlimited", [.purple, .indigo]),
         ("Studio Card", "•• 4802", [.orange, .pink])
     ]
@@ -802,7 +698,7 @@ struct MediaCatalogApp: View {
         case .podcasts:
             [("Design Details", "New episode · 42m", "mic.fill"), ("City Signals", "Episode 18 · 31m", "building.2.fill"), ("Quiet Systems", "Episode 7 · 54m", "waveform")]
         case .news:
-            [("Indica OS becomes interactive", "Technology · 12m ago", "newspaper.fill"), ("A softer approach to phone design", "Design · 1h ago", "paintpalette.fill"), ("Tonight’s city guide", "Local · 2h ago", "location.fill")]
+            [("Swift UI becomes interactive", "Technology · 12m ago", "newspaper.fill"), ("A softer approach to phone design", "Design · 1h ago", "paintpalette.fill"), ("Tonight’s city guide", "Local · 2h ago", "location.fill")]
         case .books:
             [("Interfaces That Breathe", "Amara Cole · 38%", "book.closed.fill"), ("The Quiet City", "Noah Vale · New", "building.columns.fill"), ("Motion with Meaning", "Ren Ito · 72%", "figure.walk.motion")]
         case .store:
@@ -1342,7 +1238,7 @@ private struct WatchApp: View {
                                 }
                                 .foregroundStyle(.white)
                             }
-                        Text("Indica Watch")
+                        Text("Swift UI Watch")
                             .font(.title2.bold())
                         Text(paired ? "Connected" : "Not connected")
                             .foregroundStyle(paired ? .green : .secondary)

@@ -641,7 +641,7 @@ private struct BrowserApp: View {
                         Text("Privacy Report")
                             .font(.title2.bold())
                             .padding(.top, 8)
-                        Label("Indica blocked 12 trackers in this demo session.", systemImage: "hand.raised.fill")
+                        Label("Swift UI blocked 12 trackers in this demo session.", systemImage: "hand.raised.fill")
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -710,13 +710,13 @@ private struct BrowserApp: View {
             pageBody = "72°, partly cloudy. A light shower may arrive after sunset."
         } else if query.contains("music") {
             pageTitle = "Now Playing"
-            pageBody = "Quiet Hours, an original demo playlist for Indica OS."
+            pageBody = "Quiet Hours, an original demo playlist for Swift UI."
         } else if query.contains("design") {
-            pageTitle = "Indica Design"
+            pageTitle = "Swift UI Design"
             pageBody = "Clarity first. Material responds to content, motion explains state, and personality lives in details."
         } else if query.contains("news") {
             pageTitle = "Today"
-            pageBody = "Indica OS prototype reaches its first interactive system build."
+            pageBody = "Swift UI prototype reaches its first interactive system build."
         } else if query.contains("start") {
             pageTitle = "Start Page"
             pageBody = "A calm place to begin."
@@ -733,7 +733,7 @@ private struct MailApp: View {
     @State private var unread = Set([0, 2])
 
     private let mail = [
-        ("Indica Design", "Review notes", "The Lock Screen direction is ready for feedback.", "11:24 AM"),
+        ("Swift UI Design", "Review notes", "The Lock Screen direction is ready for feedback.", "11:24 AM"),
         ("Maya", "Tonight?", "I found a place near the studio.", "10:08 AM"),
         ("Build System", "Prototype succeeded", "All simulator checks completed successfully.", "Yesterday"),
         ("Community", "Your weekly digest", "New ideas from people you follow.", "Monday")
@@ -997,256 +997,26 @@ private struct WeatherApp: View {
     }
 }
 
-private struct CalendarApp: View {
-    private let calendar = Calendar.current
-    @State private var selectedDate = Calendar.current.startOfDay(for: .now)
-    @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
-    /// Sample events, placed relative to today so the demo always lines up with the real date.
-    @State private var events: [Date: [String]] = {
-        let today = Calendar.current.startOfDay(for: .now)
-        let later = Calendar.current.date(byAdding: .day, value: 4, to: today) ?? today
-        return [
-            today: ["Design review · 2:30 PM", "Dinner with Maya · 7:00 PM"],
-            later: ["Prototype handoff · 10:00 AM"]
-        ]
-    }()
-    @State private var showingAdd = false
-    @State private var newEvent = ""
-
-    /// Weekday symbols ordered from the locale's first weekday.
-    private var weekdaySymbols: [String] {
-        let symbols = calendar.veryShortWeekdaySymbols
-        let first = calendar.firstWeekday - 1
-        return Array(symbols[first...] + symbols[..<first])
-    }
-
-    /// Leading blanks (nil) followed by each day of the displayed month.
-    private var monthCells: [Date?] {
-        guard let range = calendar.range(of: .day, in: .month, for: displayedMonth) else { return [] }
-        let weekday = calendar.component(.weekday, from: displayedMonth)
-        let leading = (weekday - calendar.firstWeekday + 7) % 7
-        let days = range.compactMap { calendar.date(byAdding: .day, value: $0 - 1, to: displayedMonth) }
-        return Array(repeating: nil, count: leading) + days
-    }
-
-    private func moveMonth(by value: Int) {
-        if let month = calendar.date(byAdding: .month, value: value, to: displayedMonth) {
-            displayedMonth = month
-        }
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 18) {
-                    HStack {
-                        ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, day in
-                            Text(day)
-                                .font(.caption.bold())
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 12) {
-                        ForEach(Array(monthCells.enumerated()), id: \.offset) { _, cell in
-                            if let date = cell {
-                                let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-                                let isToday = calendar.isDateInToday(date)
-                                Button {
-                                    selectedDate = date
-                                } label: {
-                                    VStack(spacing: 4) {
-                                        Text("\(calendar.component(.day, from: date))")
-                                            .font(.system(size: 15, weight: isSelected || isToday ? .bold : .medium, design: .rounded))
-                                            .frame(width: 34, height: 34)
-                                            .background(isSelected ? .red : .clear, in: Circle())
-                                            .foregroundStyle(isSelected ? .white : (isToday ? .red : .primary))
-                                        Circle()
-                                            .fill(events[date]?.isEmpty == false ? Color.red : .clear)
-                                            .frame(width: 4, height: 4)
-                                    }
-                                    .frame(minWidth: 44, minHeight: 44)
-                                }
-                                .accessibilityLabel(date.formatted(date: .complete, time: .omitted))
-                                .accessibilityAddTraits(isSelected ? .isSelected : [])
-                            } else {
-                                Color.clear.frame(height: 42)
-                            }
-                        }
-                    }
-
-                    Divider()
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(selectedDate.formatted(.dateTime.month(.wide).day()))
-                            .font(.title2.bold())
-                        if let dayEvents = events[selectedDate], !dayEvents.isEmpty {
-                            ForEach(dayEvents, id: \.self) { event in
-                                HStack(spacing: 12) {
-                                    Capsule()
-                                        .fill(.red)
-                                        .frame(width: 4, height: 45)
-                                    Text(event)
-                                        .font(.subheadline.weight(.semibold))
-                                    Spacer()
-                                }
-                                .padding(12)
-                                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            }
-                        } else {
-                            ContentUnavailableView("No Events", systemImage: "calendar.badge.plus", description: Text("Tap + to add one."))
-                                .frame(height: 180)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding()
-            }
-            .navigationTitle(displayedMonth.formatted(.dateTime.month(.wide).year()))
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarLeading) {
-                    Button { moveMonth(by: -1) } label: { Image(systemName: "chevron.left") }
-                        .accessibilityLabel("Previous month")
-                    Button { moveMonth(by: 1) } label: { Image(systemName: "chevron.right") }
-                        .accessibilityLabel("Next month")
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button("Today") {
-                        selectedDate = calendar.startOfDay(for: .now)
-                        displayedMonth = calendar.dateInterval(of: .month, for: .now)?.start ?? .now
-                    }
-                    Button {
-                        showingAdd = true
-                    } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("Add event")
-                }
-            }
-            .alert("New Event", isPresented: $showingAdd) {
-                TextField("Event name", text: $newEvent)
-                Button("Cancel", role: .cancel) {}
-                Button("Add") {
-                    guard !newEvent.isEmpty else { return }
-                    events[selectedDate, default: []].append(newEvent)
-                    newEvent = ""
-                }
-            }
-        }
-    }
-}
-
-private struct ClockApp: View {
-    @State private var tab = 0
-    @State private var endDate: Date?
-    @State private var timerSeconds = 300.0
-
-    var body: some View {
-        NavigationStack {
-            VStack {
-                Picker("Clock mode", selection: $tab) {
-                    Text("World").tag(0)
-                    Text("Alarm").tag(1)
-                    Text("Timer").tag(2)
-                }
-                .pickerStyle(.segmented)
-                .padding()
-
-                if tab == 0 {
-                    List {
-                        ClockRow(city: "New York", offset: "Today, -3HRS", time: Date())
-                        ClockRow(city: "London", offset: "Today, +2HRS", time: Date().addingTimeInterval(5 * 3600))
-                        ClockRow(city: "Tokyo", offset: "Tomorrow, +11HRS", time: Date().addingTimeInterval(13 * 3600))
-                    }
-                    .listStyle(.plain)
-                } else if tab == 1 {
-                    List {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text("7:30")
-                                    .font(.largeTitle)
-                                Text("Weekdays · Morning")
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Toggle("", isOn: .constant(true))
-                        }
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text("9:00")
-                                    .font(.largeTitle)
-                                Text("Saturday · Studio")
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Toggle("", isOn: .constant(false))
-                        }
-                    }
-                    .listStyle(.plain)
-                } else {
-                    VStack(spacing: 30) {
-                        Spacer()
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            let remaining = max(0, Int((endDate ?? context.date).timeIntervalSince(context.date)))
-                            Text(String(format: "%02d:%02d", remaining / 60, remaining % 60))
-                                .font(.system(size: 78, weight: .thin, design: .rounded))
-                                .monospacedDigit()
-                        }
-                        Slider(value: $timerSeconds, in: 60...3600, step: 60)
-                            .padding(.horizontal, 32)
-                        Text("\(Int(timerSeconds / 60)) minutes")
-                            .foregroundStyle(.secondary)
-                        Button {
-                            if endDate == nil {
-                                endDate = .now.addingTimeInterval(timerSeconds)
-                            } else {
-                                endDate = nil
-                            }
-                        } label: {
-                            Text(endDate == nil ? "Start" : "Cancel")
-                                .font(.headline)
-                                .frame(width: 86, height: 86)
-                                .background(endDate == nil ? Color.green.opacity(0.2) : Color.red.opacity(0.2), in: Circle())
-                                .foregroundStyle(endDate == nil ? .green : .red)
-                        }
-                        Spacer()
-                    }
-                }
-            }
-            .navigationTitle("Clock")
-        }
-    }
-}
-
-private struct ClockRow: View {
-    let city: String
-    let offset: String
-    let time: Date
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(city)
-                    .font(.title2)
-                Text(offset)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Text(time, format: .dateTime.hour().minute())
-                .font(.system(size: 38, weight: .light, design: .rounded))
-        }
-        .padding(.vertical, 6)
-    }
-}
-
 private struct NotesApp: View {
     @EnvironmentObject private var system: IndicaSystem
     @State private var editor: NoteItem?
+    @State private var query = ""
+
+    private var visibleNotes: [NoteItem] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return system.notes
+            .filter {
+                trimmed.isEmpty
+                    || $0.title.localizedCaseInsensitiveContains(trimmed)
+                    || $0.body.localizedCaseInsensitiveContains(trimmed)
+            }
+            .sorted { $0.modified > $1.modified }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(system.notes.sorted { $0.modified > $1.modified }) { note in
+                ForEach(visibleNotes) { note in
                     Button {
                         editor = note
                     } label: {
@@ -1265,11 +1035,21 @@ private struct NotesApp: View {
                     }
                 }
                 .onDelete { offsets in
-                    let sorted = system.notes.sorted { $0.modified > $1.modified }
-                    let ids = offsets.map { sorted[$0].id }
+                    let visible = visibleNotes
+                    let ids = offsets.map { visible[$0].id }
                     system.notes.removeAll { ids.contains($0.id) }
                 }
             }
+            .overlay {
+                if visibleNotes.isEmpty {
+                    if query.isEmpty {
+                        ContentUnavailableView("No Notes", systemImage: "note.text", description: Text("Tap the compose button to write one."))
+                    } else {
+                        ContentUnavailableView.search(text: query)
+                    }
+                }
+            }
+            .searchable(text: $query, prompt: "Search notes")
             .navigationTitle("Notes")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -1278,6 +1058,7 @@ private struct NotesApp: View {
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
+                    .accessibilityLabel("New note")
                 }
             }
             .sheet(item: $editor) { note in
@@ -1287,20 +1068,29 @@ private struct NotesApp: View {
     }
 }
 
+/// Saves on every edit, so swiping the sheet away or leaving the app keeps the
+/// text. A new note with nothing in it is never saved. Editing a sample note
+/// makes it the person's own.
 private struct NoteEditor: View {
     @EnvironmentObject private var system: IndicaSystem
     @Environment(\.dismiss) private var dismiss
     @State private var note: NoteItem
+    @FocusState private var isTitleFocused: Bool
+    private let isNew: Bool
+    private let original: NoteItem
 
     init(note: NoteItem) {
         _note = State(initialValue: note)
+        original = note
+        isNew = note.title.isEmpty && note.body.isEmpty
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 TextField("Title", text: $note.title)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.title.bold())
+                    .focused($isTitleFocused)
                     .padding(.horizontal)
                     .padding(.top)
                 TextEditor(text: $note.body)
@@ -1311,24 +1101,52 @@ private struct NoteEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        if let original = system.notes.first(where: { $0.id == note.id }),
-                           original.title == note.title, original.body == note.body {
-                            dismiss()
-                            return
-                        }
-                        note.modified = .now
-                        note.isSample = false
-                        if let index = system.notes.firstIndex(where: { $0.id == note.id }) {
-                            system.notes[index] = note
-                        } else {
-                            system.notes.append(note)
-                        }
-                        dismiss()
-                    }
+                    Button("Done") { dismiss() }
                 }
             }
+            .onAppear {
+                if isNew { isTitleFocused = true }
+            }
+            // The new value, not `note`: inside this action `note` can still hold the
+            // previous keystroke.
+            .onChange(of: note) { _, current in save(current) }
+            .onDisappear { save(note) }
         }
+    }
+
+    private func save(_ current: NoteItem) {
+        let index = system.notes.firstIndex(where: { $0.id == current.id })
+
+        // Typing into a new note and clearing it again leaves no note behind.
+        if isNew, isBlank(current) {
+            if let index { system.notes.remove(at: index) }
+            return
+        }
+
+        // Back to how it opened: restore the original, including its date and
+        // sample status, so trying a keystroke doesn't count as an edit.
+        if !isNew, current.title == original.title, current.body == original.body {
+            if let index, system.notes[index] != original { system.notes[index] = original }
+            return
+        }
+
+        if let index {
+            let stored = system.notes[index]
+            guard stored.title != current.title || stored.body != current.body else { return }
+        }
+        var edited = current
+        edited.modified = .now
+        edited.isSample = false
+        if let index {
+            system.notes[index] = edited
+        } else {
+            system.notes.append(edited)
+        }
+    }
+
+    private func isBlank(_ note: NoteItem) -> Bool {
+        note.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && note.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 
@@ -1379,81 +1197,13 @@ private struct RemindersApp: View {
     }
 }
 
-private struct FilesApp: View {
-    @State private var folders = ["Indica Projects", "Downloads", "On My iPhone"]
-    @State private var showingNewFolder = false
-    @State private var newFolder = ""
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section("Locations") {
-                    Label("Indica Drive", systemImage: "icloud.fill")
-                    Label("On My iPhone", systemImage: "iphone")
-                    Label("Recently Deleted", systemImage: "trash")
-                }
-
-                Section("Favorites") {
-                    ForEach(folders, id: \.self) { folder in
-                        Label(folder, systemImage: "folder.fill")
-                            .foregroundStyle(.blue)
-                    }
-                    .onDelete { folders.remove(atOffsets: $0) }
-                }
-
-                Section("Recent") {
-                    FileRow(name: "Indica OS brief", detail: "PDF · Today", symbol: "doc.fill")
-                    FileRow(name: "Wallpaper studies", detail: "Folder · Yesterday", symbol: "folder.fill")
-                    FileRow(name: "Motion notes", detail: "Text · Monday", symbol: "doc.text.fill")
-                }
-            }
-            .navigationTitle("Browse")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingNewFolder = true
-                    } label: { Image(systemName: "folder.badge.plus") }
-                }
-            }
-            .alert("New Folder", isPresented: $showingNewFolder) {
-                TextField("Name", text: $newFolder)
-                Button("Cancel", role: .cancel) {}
-                Button("Create") {
-                    if !newFolder.isEmpty { folders.append(newFolder) }
-                    newFolder = ""
-                }
-            }
-        }
-    }
-}
-
-private struct FileRow: View {
-    let name: String
-    let detail: String
-    let symbol: String
-
-    var body: some View {
-        HStack {
-            Image(systemName: symbol)
-                .foregroundStyle(.blue)
-                .frame(width: 28)
-            VStack(alignment: .leading) {
-                Text(name)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
 private struct MusicApp: View {
     @State private var trackIndex = 0
     @State private var isPlaying = false
     @State private var progress = 0.32
 
     private let tracks = [
-        ("Quiet Hours", "Indica Studio", [Color.purple, Color.indigo]),
+        ("Quiet Hours", "Swift UI Studio", [Color.purple, Color.indigo]),
         ("Slow Orbit", "Blue Static", [Color.cyan, Color.blue]),
         ("Soft Focus", "Glass Garden", [Color.pink, Color.orange])
     ]

@@ -224,6 +224,7 @@ Scope: `IndicaOS/CoreApps.swift`, `IndicaOS/EverydayApps.swift`, `IndicaOS/Calcu
 - **Completion check:** Choose a city by name, and conditions load with a visible "Updated hh:mm, source" line; in airplane mode the last result remains with a "Cached" marker.
 
 ### Calendar — `CalendarApp` (`CoreApps.swift:954`)
+> **Now (unreleased, sim):** Operational local. `LocalCalendar.swift`. Events save on the device, with edit, delete and all-day events. Doesn't sync with the iOS Calendar, and says so. Records below are the baseline.
 - **Classification (current):** Concept demo
 - **Purpose / primary task:** View a month and add events.
 - **Current behavior:** Draws days 1...31 in a 7-column grid (`:977`), always titled "July 2026" and "July <day>" (`:998`, `:1022`), with day 17 preselected. Day 1 always sits in the Sunday column because weekday headers are `veryShortWeekdaySymbols` and no first-weekday offset is computed (`:968`, `:976`). "+" opens an alert; "Add" appends a string to an in-memory dictionary (`:1030-1037`). Events cannot be deleted or edited and have no time.
@@ -241,6 +242,7 @@ Scope: `IndicaOS/CoreApps.swift`, `IndicaOS/EverydayApps.swift`, `IndicaOS/Calcu
 - **Completion check:** The app opens on today's actual date, a new event with a time added today still shows after force-quit and relaunch, and "Today" returns from another month.
 
 ### Clock — `ClockApp` (`CoreApps.swift:1043`)
+> **Now (unreleased, sim):** Operational local. `ClockApp.swift`. Real time zones, stopwatch, deadline-based timer with a notification, alarms as notifications. Alarm firing not yet exercised. Records below are the baseline.
 - **Classification (current):** Concept demo (timer is genuine but local and without completion)
 - **Purpose / primary task:** World clocks, alarms, countdown timer.
 - **Current behavior:** World tab shows three cities with times computed as `Date()`, `+5h`, `+13h` (`:1061-1063`), which assumes the device is in New York and ignores DST and the real zone. Alarm tab has two hard-coded alarms with `Toggle(isOn: .constant(...))` (`:1076`, `:1086`), which cannot be changed. Timer tab: slider 1-60 minutes (`:1099`), Start sets `endDate`, and a `TimelineView` shows min:sec remaining from the deadline (`:1093-1095`), so it is deadline-based and correct while the app is alive. At zero nothing happens: no sound, notification, or end state.
@@ -290,6 +292,7 @@ Scope: `IndicaOS/CoreApps.swift`, `IndicaOS/EverydayApps.swift`, `IndicaOS/Calcu
 - **Completion check:** Add "Buy milk", mark it complete, tap again to reopen it, relaunch, and the item and its state are still there; rename it and the new title survives relaunch.
 
 ### Files — `FilesApp` (`CoreApps.swift:1281`)
+> **Now (unreleased, sim):** Operational local. `FilesApp.swift`. The app's own Documents folder: folders, import, preview, share, rename, delete. Records below are the baseline.
 - **Classification (current):** Concept demo
 - **Purpose / primary task:** Browse and manage files.
 - **Current behavior:** Static sections: Locations (Indica Drive, On My iPhone, Recently Deleted, `:1289-1293`), Favorites (a folder list you can add to and swipe-delete, `:1296-1300`), Recent (three fake files, `:1303-1307`). No row is tappable. New Folder adds a string to `@State`.
@@ -337,6 +340,7 @@ Scope: `IndicaOS/CoreApps.swift`, `IndicaOS/EverydayApps.swift`, `IndicaOS/Calcu
 - **Completion check:** Enter `2 + 3 =` to see 5, `9 ÷ 0 =` to see Error and then a digit recovers, and run the test target in Xcode with all cases green.
 
 ### Voice Memos — `VoiceMemosApp` (`EverydayApps.swift:60`)
+> **Now (unreleased, sim):** Operational local. `VoiceMemos.swift`. Real recording, playback, rename, delete and microphone denial handling. Audible output and interruption not yet checked. Records below are the baseline.
 - **Classification (current):** Concept demo (honestly labelled)
 - **Purpose / primary task:** Record and play back audio.
 - **Current behavior:** A banner says "Recording simulation · no microphone audio is captured" (`:71`). The record button starts a timer display and an animated waveform (`:98-105`, `:136`). Stopping inserts a list row "New Recording N" with the elapsed seconds (`:130-134`). No audio is recorded, rows are not playable, and the waveform bars are static pseudo-random heights. Swipe-delete removes rows (`:93`).
