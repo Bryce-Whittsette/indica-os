@@ -44,13 +44,47 @@ Independent review (read-only, source only) of the release candidate found no P0
 |---|---|---|
 | Fabricated status glyphs and Settings battery facts (P1) | Fixed: `DeviceStatus` (NWPathMonitor and UIDevice). Values iOS doesn't provide are omitted. | Status bar shows Wi-Fi only on the simulator, which reports no battery level. The cellular bars are gone. |
 | Search does nothing (P1) | Fixed: a search sheet for apps and notes | Searching "aud" found the Claude app and the user note. Tapping the note opened Notes. |
-| Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 33 apps. The baseline's 36 demos included Journal and Canvas, which now work, and Settings, which is partly real and not labeled. | Seen in Weather and Calendar. |
+| Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 33 apps at v0.2.0, 29 now. The baseline's 36 demos included Journal and Canvas, which now work, and Settings, which is partly real and not labeled. | Seen in Weather and Calendar. |
 | Calendar fixed to July 2026 (P1) | Fixed: real month and today, with month navigation | Captured November 2026 with Tuesday the 3rd as today. |
 | Mail "Send", Phone keypad call, Gmail → YouTube (P1) | Fixed: `mailto:`, `tel:` and per-app handoffs | Source only. Handoffs need a physical device. |
 | Switcher, Tips and Weather copy mismatches, and the AI "Connected" label (P1/P2) | Fixed (copy) | Source, plus the Weather capture. |
 | Forced 1.25 s boot delay (P2) | Removed | The lock screen follows the first frame. |
 
+### M3 — shell gestures and Notes autosave (unreleased, branch `swift-ui/shell-gestures`)
+
+Simulator only (iPhone 18 Pro, iOS 27.2), driven with scripted touches, so feel and frame pacing are unverified. No independent review yet.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Page scrubbing (brief §20) | Implemented | A hold-and-drag moved two pages. One gesture past the last page and back ended clamped on page 1. No Home editing started. A plain tap opened search. Pages step rather than track the finger continuously, so the "track continuously" requirement is only partly met. `UIPageControl` was not evaluated. |
+| Switcher swipe-to-close (O13) | Fixed | A partial swipe sprang back and stayed in the switcher. A sideways drag moved to the next card. A full swipe closed the card under the finger and kept the others. Tapping a card opened it. Closing the last card went Home. |
+| Notes autosave and search | Implemented | Text survived swipe-away and a hard kill, confirmed by relaunching and searching. Search found the note. |
+
+Bugs found by testing during M3: a release after a partial swipe opened the app; a card drag blocked the scroll view (replaced with a single drag per gesture); and autosave ran one keystroke behind, which left the note "Second autosav" in the simulator's test data (fixed by saving the new value). Reading the plist right after a kill also looked like data loss, but the file just lags `cfprefsd`, which already holds the data. Measure persistence by relaunching.
+
 New observation: the real iOS home indicator sometimes shows below the app's own bottom bar (seen in Reminders). That's already part of the P1 "custom home indicator" finding.
+
+### M3 review and continuous pager (unreleased, branch `swift-ui/shell-gestures`)
+
+Independent source review of `7a972d6..647d7bd` blocked on one defect and listed eight more.
+
+| Finding | Severity | Result |
+| --- | --- | --- |
+| Upward swipe on a switcher card's lower part also fired the shell's Home swipe | P1 | Fixed. Observed on the simulator: partial and full swipes stay in the switcher |
+| Pill and switcher state stuck after a system-cancelled touch | P2 | Fixed with `@GestureState` reset. Not exercised: needs a device |
+| Two quick flicks clobbered shared close state | P2 | Fixed with a set of closing cards. Source only: scripted touches are too slow |
+| Clearing a new note kept a blank "Untitled" | P2 | Fixed. Observed on the simulator |
+| Pill translation could jump when the pill resized | P2 (suspected) | Fixed by using global coordinates |
+| Closing an earlier card moved focus to another card | P3 | Fixed. Source only |
+| Reverting a sample note bumped its date and made it personal | P3 | Fixed. Source only |
+| Every keystroke re-encodes all notes | P3 (suspected) | Open, recorded in the changelog |
+| README and release checks not updated | P3 | Release checks updated; README updated with this milestone |
+
+The pager replaces `TabView`, which can't report a fractional page. Measured on the simulator during this work: a first version rebuilt every icon per frame and took 3.07 s and 18 frames to settle. Moving the offset into a `ViewModifier` brought it to 0.80 to 1.08 s and 7 to 9 frames. Stopping the wallpaper animation did not help (1.04 to 1.40 s), so it stays. A 3-second `sample` during a drag showed the main thread mostly waiting, with no icon `body` in the stacks, which points at the simulator's renderer. None of this establishes a device frame rate.
+
+### M4 — first real local apps (unreleased, branch `swift-ui/shell-gestures`)
+
+Calendar, Clock, Files and Voice Memos moved from concept demo to operational local, taking the labeled count from 33 to 29. Running them caught one defect the logic checks hadn't: `Text(date, format:)` applied the environment's time zone over the format's, so all world clocks showed the device's time. Fixed, with a check on the new `ClockFormat.time`. Exact scope and what's still unexercised are in `docs/release-checks.md`. An independent source review then blocked on three findings: a recording could be deleted on interruption, a possible crash in the interruption handler, and alarms saved without permission looking armed but never firing. It also flagged notification races, a stuck pager when Home is destroyed mid-gesture, false README statements, a fake Calendar notification, and permission strings for features that don't exist. All are fixed in source and pass a build, but none of the fixes has been exercised on a simulator or device. Lower-priority items left open are in the changelog.
 
 ## Audit health score
 
