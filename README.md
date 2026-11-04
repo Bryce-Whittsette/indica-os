@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup-dark.svg">
+  <img src="docs/brand/lockup.svg" alt="Swift UI" width="330">
+</picture>
+
 # Swift UI
 
 [Read the wiki](https://github.com/Bryce-Whittsette/indica-os/wiki) for setup, app guides, connections, data storage, development, and troubleshooting.
@@ -6,7 +11,7 @@
 
 Swift UI runs inside an ordinary iOS application. It does not replace the operating system. Some apps store your data locally, some connect to external services, and others are concept demos that use sample data. Concept demos are labeled **Concept demo · sample data** on screen, and [docs/audit/app-inventory.md](docs/audit/app-inventory.md) lists the status of every app.
 
-The shell uses the selected Instrument design (`DESIGN.md`), checked on the simulator. The logo isn't designed yet, so the boot mark and app icon are still the earlier prototype's, and the screenshots below are from v0.2.0. The app's name and copy now say Swift UI; the project, bundle ID and callback keep their `IndicaOS` names for compatibility. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+The shell uses the selected Instrument design (`DESIGN.md`), checked on the simulator. The logo and its rules are in `docs/brand`. The screenshots below are from v0.2.0. The app's name and copy now say Swift UI; the project, bundle ID and callback keep their `IndicaOS` names for compatibility. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 <p>
   <img src="docs/images/v0.2.0/lock.png" alt="Lock screen with the time, three widgets and two notifications, beside the real camera cutout" width="200" />

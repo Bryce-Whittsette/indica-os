@@ -14,6 +14,7 @@
 - A pull from the top only counts when it's mostly downward and starts within 20 pt of the status bar, so a page swipe that begins on the ledger can't also open an overlay. Drags inside an open overlay no longer open another or unlock.
 
 ### Added
+- **Swift UI has a logo.** The Trace mark is one drag drawn as an S, with a dot where the finger is now. The wordmark is original lettering on a monospaced grid, with a bracket that measures the space in the name. The app icon has default, dark and tinted versions, and the boot screen uses the new mark, though it only shows for a moment. Masters, exports and usage rules are in `docs/brand`.
 - Published a GitHub wiki with setup instructions, app and navigation guides, connection setup, storage and privacy details, a development guide, and troubleshooting.
 
 ### Removed

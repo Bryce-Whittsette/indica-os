@@ -124,54 +124,9 @@ private struct BootScreen: View {
             Instrument.ground
 
             VStack(spacing: 18) {
-                IndicaBrandMark()
-                    .frame(width: 88, height: 88)
-
-                Text("SWIFT UI")
-                    .font(Instrument.mono(.footnote, weight: .medium))
-                    .tracking(4)
-                    .foregroundStyle(Instrument.ink)
+                BrandMark(size: 88)
+                BrandWordmark(height: 32)
             }
-        }
-    }
-}
-
-private struct IndicaBrandMark: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(hex: 0x232635), Color(hex: 0x07080B)],
-                        center: .topLeading,
-                        startRadius: 2,
-                        endRadius: 78
-                    )
-                )
-                .overlay {
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color(hex: 0xD7B18E), Color(hex: 0x54463B)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.4
-                        )
-                }
-
-            VStack(spacing: 6) {
-                Capsule()
-                    .fill(Color(hex: 0xD7B18E))
-                    .frame(width: 13, height: 27)
-                Capsule()
-                    .fill(Color(hex: 0xF0D6BA))
-                    .frame(width: 23, height: 7)
-                Capsule()
-                    .fill(Color(hex: 0xD7B18E))
-                    .frame(width: 13, height: 27)
-            }
-            .shadow(color: Color(hex: 0x7967C7).opacity(0.42), radius: 5)
         }
     }
 }

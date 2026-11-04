@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="330" height="62" viewBox="0 0 330 62" role="img" aria-label="Swift UI">
+<title>Swift UI</title>
+<g transform="translate(0 1) scale(1.25)">
+<path d="M38 9H19a7 7 0 0 0 0 14H31a7 7 0 0 1 0 14H15" fill="none" stroke="#ECEEEB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="12" cy="37" r="4" fill="#FF6A36"/>
+</g>
+<g transform="translate(74 0)">
+<g fill="none" stroke="#ECEEEB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M27 12.5H13.75a8.75 8.75 0 0 0 0 17.5H18.25a8.75 8.75 0 0 1 0 17.5H5"/>
+<path transform="translate(32 0)" d="M5 24.5L10.5 47.5L16 30L21.5 47.5L27 24.5"/>
+<path transform="translate(64 0)" d="M8 24.5H16V47.5M6 47.5H26"/>
+<path transform="translate(96 0)" d="M26 12.5H21a7 7 0 0 0-7 7V47.5M6 24.5H25M7 47.5H22"/>
+<path transform="translate(128 0)" d="M13 14V40.5a7 7 0 0 0 7 7H26M5 24.5H25"/>
+<path transform="translate(192 0)" d="M6 12.5V37.5a10 10 0 0 0 20 0V12.5"/>
+<path transform="translate(224 0)" d="M8 12.5H24M16 12.5V47.5M8 47.5H24"/>
+</g>
+<circle cx="80" cy="12.5" r="3.25" fill="#ECEEEB"/>
+<path d="M164 42V55H188V42" fill="none" stroke="#FF6A36" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter"/>
+</g>
+</svg>
