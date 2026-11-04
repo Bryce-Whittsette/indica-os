@@ -15,6 +15,7 @@ Simulator, iOS 27.2, Debug build. Screenshots read by eye, with scripted touches
 - [x] All four Home pages' icons drawn from the SVG masters, including monograms. The ruler's signal tick moves as pages settle.
 - [x] Icon appearances: Light, Dark, Clear and Tinted on Home, and their Settings previews. Compact density. Aura and Daylight wallpapers on Home, Aura on the Lock Screen.
 - [x] Scripted touches: page swipe, opening a dock app, Search opening from a tap on the pill, swipe up to unlock, the app bar's Recents button, leaving the switcher.
+- [x] Independent read-only review of the branch. No blockers. Its findings were fixed here, except the dead controls listed below.
 - [x] Scripted touches: a pull from y=30 opens Notifications on the left and Control Center on the right. Before the fix, gesture logging showed touches above the safe area never reached the shell's gesture. It's from a fresh launch each time, since a quick second swipe goes to iOS by design.
 
 Still required:
@@ -24,7 +25,9 @@ Still required:
 - [ ] Search pill scrub re-run with the ruler. The gesture code is unchanged, and only the ticks were seen moving during a settle.
 - [ ] Press, wiggle and switcher card-close re-run with the new motion. The closing spring changed; the gesture code didn't.
 - [ ] iPhone 18 Pro Max and the iOS 17 runtime, including SVG template rendering there.
-- [ ] VoiceOver walkthrough of the ledger, ruler, dock and Calendar. Reduce Motion across the shell.
+- [ ] VoiceOver walkthrough of the ledger, ruler, dock, Calendar and Control Center, including the escape gesture and adjustable sliders. These are source-reviewed and built, not run with VoiceOver. Reduce Motion across the shell.
+- [ ] Whether iOS's home bar stays visible on Home and the Lock Screen on a physical iPhone, now that the shell doesn't draw its own.
+- [ ] Known dead controls, unchanged here: the flashlight buttons, Control Center's timer and Screen, the cellular toggle, and the Notification Previews setting.
 - [ ] Remaining gradient wallpapers (Tide, Bloom, Dusk, Graphite) on the Lock Screen and in the overlays.
 
 ## v0.3.0 (2026-11-03)

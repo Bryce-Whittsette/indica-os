@@ -15,7 +15,7 @@ Evidence labels: **sim** means scripted touches on the iPhone 18 Pro simulator (
 | App bottom bar | `HybridAppNavigationBar` | 7 pt upward, 30 pt to go Home | Bar buttons | Short drag springs back |
 | App content | The app's own views | Scroll, text selection and back as provided by SwiftUI | | |
 | Sheets | iOS | System sheet drag | | |
-| Top of screen, 82 pt, including the status bar region | Shell | Drag down 70 pt | | Opens Notifications on the left, Control Center on the right. Sim: from y=30, on a fresh launch. A quick second swipe reaches iOS instead, by design |
+| Top of screen: the status bar region plus 20 pt | Shell | Mostly downward, 70 pt, with no overlay open | Sideways drags stay with the pager | Opens Notifications on the left, Control Center on the right. Sim: from y=30, on a fresh launch. A quick second swipe reaches iOS instead, by design |
 | Bottom of screen, Lock | Shell | Drag up 46 pt | | Unlocks |
 | Real top and bottom screen edges | Shell first, then iOS | `defersSystemGestures(on: .vertical)` | First swipe goes to the shell | A second swipe reaches iOS, so a deliberate exit still works |
 

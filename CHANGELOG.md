@@ -10,6 +10,8 @@
 - Springs in the shell no longer overshoot.
 - The Lock Screen shows your real next event, in place of a made-up event and step count.
 - The concept demo label has its own strip above the app bar.
+- Sample notifications say SAMPLE in place of a made-up time, and the count says samples rather than recent. All of them are seeded: Swift UI doesn't read other apps' notifications.
+- A pull from the top only counts when it's mostly downward and starts within 20 pt of the status bar, so a page swipe that begins on the ledger can't also open an overlay. Drags inside an open overlay no longer open another or unlock.
 
 ### Added
 - Published a GitHub wiki with setup instructions, app and navigation guides, connection setup, storage and privacy details, a development guide, and troubleshooting.
@@ -19,7 +21,7 @@
 - Removed Liquid Glass and its Intensity slider from Settings, because nothing is glass now. "Glass, Color & Motion" is now "Color & Motion".
 - Removed the in-app Reduce Transparency switches, because nothing depends on them now. Weather's material still follows the iOS setting.
 - Removed the "Swipe up for Home" hint in apps. It disappeared after a few seconds and resized the screen when it did.
-- Removed the shell's own bar from Home, the Lock Screen and Control Center, where it did nothing and doubled up with the iOS home bar.
+- Removed the shell's own bar from Home and the Lock Screen, where it did nothing and doubled up with the iOS home bar.
 - Removed tool-specific project branding and external tooling links. Development instructions now live in `DEVELOPMENT.md`.
 
 ### Fixed
@@ -27,7 +29,10 @@
 - The concept demo label no longer covers the Messages composer.
 - The Apps row in Settings has its icon back.
 - Calendar days no longer wrap or run together at the largest text sizes.
-- Dock icons have VoiceOver labels.
+- Control Center has a bar that closes it, and every overlay closes with the VoiceOver escape gesture. It could only be closed by tapping the background, which VoiceOver can't reach.
+- VoiceOver labels and values for dock icons, Control Center toggles and the home bar. Brightness and Volume are adjustable. Calendar announces today.
+- The Done and Clear buttons respond across the whole panel instead of only on their text.
+- A later day of a multi-day event shows the start date, not a bare time.
 
 ## v0.3.0 — 2026-11-03
 

@@ -203,7 +203,7 @@ struct IndicaSettingsApp: View {
         case .wifi: device.network == .wifi ? "Connected" : "Not connected"
         case .bluetooth: system.bluetoothEnabled ? "On" : "Off"
         case .vpn: "Not Connected"
-        case .notifications: "\(system.notifications.count) recent"
+        case .notifications: system.notificationCountText
         case .focus: system.isFocusEnabled ? "On" : "Off"
         case .display: system.appearance.rawValue
         case .wallpaper: system.wallpaper.rawValue

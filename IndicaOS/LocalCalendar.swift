@@ -11,6 +11,9 @@ struct CalendarApp: View {
     @ScaledMetric(relativeTo: .subheadline) private var dayCellHeight: CGFloat = 48
     @ScaledMetric(relativeTo: .footnote) private var timeColumnWidth: CGFloat = 76
 
+    /// Scales with text, but stays a comfortable target and doesn't dwarf the capped numerals.
+    private var cellHeight: CGFloat { min(max(dayCellHeight, 44), 72) }
+
     /// Weekday symbols ordered from the locale's first weekday.
     private var weekdaySymbols: [String] {
         let symbols = calendar.veryShortWeekdaySymbols
@@ -72,7 +75,7 @@ struct CalendarApp: View {
                                     InstrumentRule(color: Instrument.rule)
                                     Spacer(minLength: 0)
                                 }
-                                .frame(minHeight: min(dayCellHeight, 72))
+                                .frame(minHeight: cellHeight)
                                 .accessibilityHidden(true)
                             }
                         }
@@ -104,7 +107,8 @@ struct CalendarApp: View {
                         .accessibilityLabel("Add event")
                 }
             }
-            // Signal marks what's current, so plain controls here stay ink.
+            // Signal marks what's current, so plain controls here stay ink. The editor
+            // sheet keeps the accent: an ink Toggle loses its white knob in dark.
             .tint(Instrument.ink)
             .sheet(item: $editing) { draft in
                 EventEditor(draft: draft, calendar: calendar)
@@ -166,7 +170,7 @@ struct CalendarApp: View {
                     .frame(width: 10, height: 2)
                     .opacity(hasEvent ? 1 : 0)
             }
-            .frame(maxWidth: .infinity, minHeight: min(dayCellHeight, 72))
+            .frame(maxWidth: .infinity, minHeight: cellHeight)
             .background(isSelected ? Instrument.ink : .clear)
             // The selected day is a solid block with a signal underline.
             .overlay(alignment: .bottom) {
@@ -181,7 +185,7 @@ struct CalendarApp: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(date.formatted(date: .complete, time: .omitted))
-        .accessibilityValue(hasEvent ? "Has events" : "")
+        .accessibilityValue([isToday ? "Today" : nil, hasEvent ? "Has events" : nil].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -215,7 +219,12 @@ struct CalendarApp: View {
     }
 
     private func leadingTime(for event: CalendarEvent) -> String {
-        event.isAllDay ? "All day" : event.start.formatted(date: .omitted, time: .shortened)
+        if event.isAllDay { return "All day" }
+        // On a later day of a multi-day event, a bare time would read as today's.
+        if !calendar.isDate(event.start, inSameDayAs: selectedDate) {
+            return event.start.formatted(.dateTime.month(.abbreviated).day())
+        }
+        return event.start.formatted(date: .omitted, time: .shortened)
     }
 
     /// When it ends, for an event with a time. All-day events only need this across days.

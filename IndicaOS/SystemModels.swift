@@ -168,13 +168,10 @@ enum WallpaperStyle: String, CaseIterable, Identifiable {
         self == .instrument ? Instrument.ink : foreground.opacity(0.6)
     }
 
-    /// The accent as small text, chosen to read on this wallpaper.
+    /// The accent as small text. It only reaches 4.5:1 on Instrument's flat ground; the
+    /// gradient wallpapers vary too much under it, so they use the plain foreground.
     var signalForeground: Color {
-        switch self {
-        case .instrument: Instrument.signalText
-        case .daylight: Color(hex: InstrumentTokens.signalText.light)
-        default: Color(hex: InstrumentTokens.signalText.dark)
-        }
+        self == .instrument ? Instrument.signalText : foreground
     }
 
     /// A glyph on a solid `foreground` tile, as in the dock.
@@ -566,6 +563,8 @@ struct SystemNotification: Identifiable, Equatable {
     let title: String
     let body: String
     let date: Date
+    /// Seeded to show the surface. Nothing here reads other apps' notifications.
+    var isSample = true
 }
 
 @MainActor
@@ -680,6 +679,11 @@ final class IndicaSystem: ObservableObject {
     @Published var brightness = 0.78
     @Published var volume = 0.46
     @Published var appHistory: [BuiltInApp] = []
+    var notificationCountText: String {
+        let count = notifications.count
+        return count == 1 ? "1 sample" : "\(count) samples"
+    }
+
     @Published var notifications: [SystemNotification] = [
         SystemNotification(app: .messages, title: "Maya", body: "The concept finally feels like a real phone.", date: .now),
         SystemNotification(app: .weather, title: "Rain later", body: "Showers are expected around 7 PM.", date: .now.addingTimeInterval(-1800))

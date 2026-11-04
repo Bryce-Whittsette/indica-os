@@ -12,6 +12,8 @@ A phone as a precise tool. Quiet surfaces, ruled lines and one signal color. Not
 
 Instrument applies to Swift UI's own surfaces: the shell, launcher, Lock Screen, switcher, overlays, app bar and original apps. An app that reproduces an existing iOS app keeps that app's layout, density, navigation and controls (§6, §20). Don't reskin those into Instrument.
 
+**Calendar is treated as an original surface.** It's Swift UI's own local calendar and doesn't reach the iOS Calendar's data, and the selected direction's comps include a ruled Calendar. This is a reading of the brief, recorded here so the owner can overrule it. Clock, Files and Voice Memos haven't had this decision made and keep system styling.
+
 ## Where it lives
 
 - `IndicaOS/InstrumentTokens.swift`: the palette and contrast formula, with no SwiftUI, so `Tests/InstrumentTokenTests.swift` can measure it.
@@ -35,9 +37,9 @@ Semantic tokens for both appearances. Every pair below is measured in CI: 4.5:1 
 | `signalText` | `#B8330A` | `#FF6A36` | The accent as small text |
 | `success` | `#1B7F4B` | `#45C486` | Success only |
 
-Signal means "this is current or needs you." It isn't decoration, and it isn't error: errors keep the system red. A selected or on control is a solid `ink` block, not signal.
+Signal means "this is current or needs you." It isn't decoration, and it isn't error: errors keep the system red. A selected or on control that the shell draws is a solid `ink` block, not signal. iOS controls such as Toggle take the accent, since an ink Toggle loses its white knob in dark.
 
-The default accent, which tints controls across the app, is Signal in its text form. Calendar and Search override it with `ink` where a whole screen of controls would otherwise turn orange. The earlier accents stay in Settings.
+The default accent, which tints controls across the app, is Signal in its text form. Calendar and Search override it with `ink` where a whole screen of controls would otherwise turn orange. Signal as text reaches 4.5:1 only on Instrument's own ground, so on gradient wallpapers the ledger uses the plain foreground. The earlier accents stay in Settings.
 
 ## Type
 

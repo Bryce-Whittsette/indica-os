@@ -86,6 +86,14 @@ The pager replaces `TabView`, which can't report a fractional page. Measured on 
 
 Calendar, Clock, Files and Voice Memos moved from concept demo to operational local, taking the labeled count from 33 to 29. Running them caught one defect the logic checks hadn't: `Text(date, format:)` applied the environment's time zone over the format's, so all world clocks showed the device's time. Fixed, with a check on the new `ClockFormat.time`. Exact scope and what's still unexercised are in `docs/release-checks.md`. An independent source review then blocked on three findings: a recording could be deleted on interruption, a possible crash in the interruption handler, and alarms saved without permission looking armed but never firing. It also flagged notification races, a stuck pager when Home is destroyed mid-gesture, false README statements, a fake Calendar notification, and permission strings for features that don't exist. All are fixed in source and pass a build, but none of the fixes has been exercised on a simulator or device. Lower-priority items left open are in the changelog.
 
+## M5: Instrument
+
+The selected design system is built for the shell and Calendar (`DESIGN.md`). Evidence is listed in `docs/release-checks.md`: source checks and simulator captures, nothing on a physical iPhone.
+
+Running it caught one defect that predates it: touches above the safe area never reached the shell's gesture, so a pull from the status bar did nothing. Gesture logging confirmed it, and the previous build behaved the same way.
+
+An independent read-only review found no blockers. Fixed from it: sample notifications unlabeled, no VoiceOver way out of Control Center, signal text under 4.5:1 on gradient wallpapers, a bare time on later days of multi-day events, Calendar cells under 44 pt at small text sizes, a pull band that ignored the safe area and had no axis check, Reduce Motion read only once by the wallpaper, and small panel buttons responding only on their text. Left open, and listed in the checks: dead controls that predate this work. For the owner to confirm: treating Calendar as an original surface.
+
 ## Audit health score
 
 | # | Dimension | Score | Key finding |

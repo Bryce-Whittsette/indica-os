@@ -16,6 +16,9 @@ struct SystemShell: View {
 
                 if let overlay = system.overlay {
                     overlayView(overlay)
+                        .accessibilityAction(.escape) {
+                            withAnimation(Instrument.motion) { system.overlay = nil }
+                        }
                         .zIndex(20)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -25,10 +28,13 @@ struct SystemShell: View {
             // are the whole screen. After it, the status bar region gets no touches.
             .contentShape(Rectangle())
             .simultaneousGesture(
-                systemGesture(screenSize: CGSize(
-                    width: proxy.size.width,
-                    height: proxy.size.height + proxy.safeAreaInsets.top + proxy.safeAreaInsets.bottom
-                ))
+                systemGesture(
+                    screenSize: CGSize(
+                        width: proxy.size.width,
+                        height: proxy.size.height + proxy.safeAreaInsets.top + proxy.safeAreaInsets.bottom
+                    ),
+                    topBand: proxy.safeAreaInsets.top + 20
+                )
             )
             .ignoresSafeArea()
             .onAppear {
@@ -43,7 +49,8 @@ struct SystemShell: View {
         // those edges reaches the shell. A second reaches iOS, so a deliberate exit
         // still works. See docs/interactions.md.
         .defersSystemGestures(on: .vertical)
-        // The shell draws its own bar; this avoids a second one under it.
+        // Asks iOS to fade its home bar when idle, so it doesn't sit under the app bar.
+        // iOS decides when; it can stay visible (docs/interactions.md).
         .persistentSystemOverlays(.hidden)
     }
 
@@ -82,10 +89,13 @@ struct SystemShell: View {
         }
     }
 
-    private func systemGesture(screenSize size: CGSize) -> some Gesture {
+    private func systemGesture(screenSize size: CGSize, topBand: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 24)
             .onEnded { value in
-                let startedAtTop = value.startLocation.y < 82
+                // An open overlay owns its own drags, and a mostly sideways drag is a page swipe.
+                guard system.overlay == nil,
+                      abs(value.translation.height) > abs(value.translation.width) else { return }
+                let startedAtTop = value.startLocation.y < topBand
                 let startedAtBottom = value.startLocation.y > size.height - 172
 
                 if startedAtTop, value.translation.height > 70 {
@@ -179,7 +189,8 @@ struct IndicaWallpaper: View {
     }
 }
 
-/// The earlier wallpapers, still offered as a choice. They hold still under Reduce Motion.
+/// The earlier wallpapers, still offered as a choice. They hold still under Reduce Motion,
+/// including when it's turned on while one is showing.
 private struct GradientWallpaper: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let style: WallpaperStyle
@@ -210,11 +221,17 @@ private struct GradientWallpaper: View {
                     .rotationEffect(.degrees(drift ? -14 : 13))
                     .offset(x: drift ? -size.width * 0.26 : size.width * 0.18, y: size.height * 0.34)
             }
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
-                    drift.toggle()
-                }
+            .onAppear { updateDrift() }
+            .onChange(of: reduceMotion) { _, _ in updateDrift() }
+        }
+    }
+
+    private func updateDrift() {
+        if reduceMotion {
+            withTransaction(Transaction(animation: nil)) { drift = false }
+        } else {
+            withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
+                drift = true
             }
         }
     }
@@ -333,7 +350,7 @@ private struct LockScreen: View {
                 }
             }
             .padding(.horizontal, 20)
-            // Room for the home bar, which iOS draws.
+            // Room for the iOS home bar.
             .padding(.bottom, 34)
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
@@ -473,7 +490,7 @@ private struct HomeScreen: View {
                 .padding(.horizontal, metrics.horizontalPadding)
                 .padding(.top, metrics.dockVerticalPadding)
 
-                // iOS draws the home bar here, so the shell doesn't draw a second one.
+                // Room for the iOS home bar. The shell doesn't draw a second one.
                 Color.clear
                     .frame(height: metrics.homeBarClearance)
             }
@@ -492,17 +509,20 @@ private struct HomeScreen: View {
             }
             .overlay(alignment: .topTrailing) {
                 if system.isEditingHome {
-                    Button("Done") {
+                    Button {
                         HapticEngine.play(.selection, enabled: system.hapticsEnabled)
                         withAnimation(Instrument.motion) {
                             system.isEditingHome = false
                         }
+                    } label: {
+                        Text("Done")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Instrument.ink)
+                            .padding(.horizontal, 16)
+                            .frame(minHeight: 44)
+                            .instrumentPanel(cornerRadius: 18)
+                            .contentShape(Rectangle())
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Instrument.ink)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 9)
-                    .instrumentPanel(cornerRadius: 18)
                     .padding(.top, 64)
                     .padding(.trailing, 18)
                 }
@@ -1134,7 +1154,7 @@ private struct AppSwitcher: View {
                 .font(.footnote)
                 .foregroundStyle(system.wallpaper.secondaryForeground)
 
-            HomeIndicator(color: system.wallpaper.foreground) {
+            HomeIndicator(color: system.wallpaper.foreground, accessibilityLabel: "Home") {
                 system.goHome()
             }
             .padding(.top, 14)
@@ -1364,12 +1384,12 @@ private struct ControlCenterOverlay: View {
                 HStack(spacing: 12) {
                     VStack(spacing: 12) {
                         HStack(spacing: 12) {
-                            ControlToggle(symbol: "airplane", isOn: $system.airplaneMode)
-                            ControlToggle(symbol: "antenna.radiowaves.left.and.right", isOn: .constant(true))
+                            ControlToggle(title: "Airplane Mode", symbol: "airplane", isOn: $system.airplaneMode)
+                            ControlToggle(title: "Cellular", symbol: "antenna.radiowaves.left.and.right", isOn: .constant(true))
                         }
                         HStack(spacing: 12) {
-                            ControlToggle(symbol: "wifi", isOn: $system.wifiEnabled)
-                            ControlToggle(symbol: "bolt.horizontal.fill", isOn: $system.bluetoothEnabled)
+                            ControlToggle(title: "Wi-Fi", symbol: "wifi", isOn: $system.wifiEnabled)
+                            ControlToggle(title: "Bluetooth", symbol: "bolt.horizontal.fill", isOn: $system.bluetoothEnabled)
                         }
                     }
                     .padding(13)
@@ -1393,8 +1413,8 @@ private struct ControlCenterOverlay: View {
                 .padding(.horizontal, 20)
 
                 HStack(spacing: 12) {
-                    VerticalSlider(value: $system.brightness, symbol: "sun.max")
-                    VerticalSlider(value: $system.volume, symbol: "speaker.wave.2")
+                    VerticalSlider(title: "Brightness", value: $system.brightness, symbol: "sun.max")
+                    VerticalSlider(title: "Volume", value: $system.volume, symbol: "speaker.wave.2")
                     VStack(spacing: 12) {
                         WideControl(title: "Focus", symbol: "moon", isOn: $system.isFocusEnabled)
                         WideControl(title: "Screen", symbol: "rectangle.inset.filled")
@@ -1411,6 +1431,11 @@ private struct ControlCenterOverlay: View {
                 .padding(.horizontal, 20)
 
                 Spacer()
+
+                HomeIndicator(accessibilityLabel: "Close Control Center") {
+                    withAnimation(Instrument.motion) { system.overlay = nil }
+                }
+                .padding(.bottom, 26)
             }
             .foregroundStyle(Instrument.ink)
         }
@@ -1418,6 +1443,7 @@ private struct ControlCenterOverlay: View {
 }
 
 private struct ControlToggle: View {
+    let title: String
     let symbol: String
     @Binding var isOn: Bool
 
@@ -1439,11 +1465,13 @@ private struct ControlToggle: View {
                 }
         }
         .buttonStyle(PressableButtonStyle())
-        .accessibilityAddTraits(isOn ? .isSelected : [])
+        .accessibilityLabel(title)
+        .accessibilityValue(isOn ? "On" : "Off")
     }
 }
 
 private struct VerticalSlider: View {
+    let title: String
     @Binding var value: Double
     let symbol: String
 
@@ -1473,6 +1501,16 @@ private struct VerticalSlider: View {
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(Instrument.edge, lineWidth: Instrument.hairline)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue("\(Int((value * 100).rounded())) percent")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: value = min(1, value + 0.1)
+            case .decrement: value = max(0, value - 0.1)
+            @unknown default: break
+            }
         }
     }
 }
@@ -1547,20 +1585,24 @@ private struct NotificationCenterOverlay: View {
                         Text("Notifications")
                             .font(.title.weight(.semibold))
                             .tracking(-0.5)
-                        Text("\(system.notifications.count) recent")
+                        Text(system.notificationCountText)
                             .font(Instrument.mono(.footnote))
                             .foregroundStyle(Instrument.inkSecondary)
                     }
                     Spacer()
-                    Button("Clear") {
-                        withAnimation {
+                    Button {
+                        withAnimation(Instrument.motion) {
                             system.notifications.removeAll()
                         }
+                    } label: {
+                        Text("Clear")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Instrument.ink)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 44)
+                            .instrumentPanel(cornerRadius: 12)
+                            .contentShape(Rectangle())
                     }
-                    .font(.footnote.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .instrumentPanel(cornerRadius: 12)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 14)
@@ -1583,7 +1625,7 @@ private struct NotificationCenterOverlay: View {
                     .padding(.vertical, 13)
                 }
 
-                HomeIndicator {
+                HomeIndicator(accessibilityLabel: "Close Notifications") {
                     withAnimation(Instrument.motion) { system.overlay = nil }
                 }
                 .padding(.bottom, 26)
@@ -1606,9 +1648,16 @@ private struct NotificationCard: View {
                     Text(notification.title)
                         .font(.subheadline.weight(.semibold))
                     Spacer()
-                    Text(notification.date, style: .relative)
-                        .font(Instrument.mono(.caption2))
-                        .foregroundStyle(Instrument.inkSecondary)
+                    // In place of a time: a sample's time isn't real either.
+                    if notification.isSample {
+                        Text("SAMPLE")
+                            .font(Instrument.mono(.caption2))
+                            .foregroundStyle(Instrument.inkSecondary)
+                    } else {
+                        Text(notification.date, style: .relative)
+                            .font(Instrument.mono(.caption2))
+                            .foregroundStyle(Instrument.inkSecondary)
+                    }
                 }
                 Text(notification.body)
                     .font(.footnote)
@@ -1760,17 +1809,17 @@ private struct LockCustomizationOverlay: View {
 
 struct HomeIndicator: View {
     var color: Color = Instrument.ink
-    var action: (() -> Void)?
+    let accessibilityLabel: String
+    let action: () -> Void
 
-    init(color: Color = Instrument.ink, action: (() -> Void)? = nil) {
+    init(color: Color = Instrument.ink, accessibilityLabel: String, action: @escaping () -> Void) {
         self.color = color
+        self.accessibilityLabel = accessibilityLabel
         self.action = action
     }
 
     var body: some View {
-        Button {
-            action?()
-        } label: {
+        Button(action: action) {
             color
                 .frame(width: 134, height: 3)
                 .frame(maxWidth: .infinity, minHeight: 16)
@@ -1778,6 +1827,7 @@ struct HomeIndicator: View {
                 .contentShape(Rectangle().inset(by: -14))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
     }
 }
 
