@@ -852,7 +852,7 @@ private struct ConnectionsSummaryCard: View {
             Spacer()
         }
         .padding(18)
-        .liquidGlass(cornerRadius: 28, intensity: 0.92)
+        .instrumentPanel(cornerRadius: 28)
         .padding(.vertical, 4)
     }
 }
@@ -1216,7 +1216,7 @@ struct ConnectedServiceApp: View {
 
     private var serviceHero: some View {
         HStack(spacing: 15) {
-            PremiumAppMark(app: app, size: 66)
+            AppMark(app: app, size: 66)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(app.name)
@@ -1230,7 +1230,7 @@ struct ConnectedServiceApp: View {
             Spacer()
         }
         .padding(17)
-        .liquidGlass(cornerRadius: 28, intensity: 0.9)
+        .instrumentPanel(cornerRadius: 28)
     }
 
     @ViewBuilder
@@ -1490,7 +1490,7 @@ struct AIAssistantApp: View {
 
     private var assistantHeader: some View {
         HStack(spacing: 12) {
-            PremiumAppMark(app: app, size: 48)
+            AppMark(app: app, size: 48)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(app.name) for Swift UI")
@@ -1506,7 +1506,7 @@ struct AIAssistantApp: View {
                 .foregroundStyle(.green)
         }
         .padding(15)
-        .liquidGlass(cornerRadius: 24, intensity: 0.9)
+        .instrumentPanel(cornerRadius: 24)
         .padding(.horizontal, 16)
     }
 
@@ -1546,7 +1546,7 @@ struct AIAssistantApp: View {
             VStack(spacing: 18) {
                 Spacer(minLength: 54)
 
-                PremiumAppMark(app: app, size: 92)
+                AppMark(app: app, size: 92)
 
                 Text("Connect \(service.shortName)")
                     .font(.title2.bold())
@@ -1575,7 +1575,7 @@ struct AIAssistantApp: View {
                 .foregroundStyle(.secondary)
             }
             .padding(24)
-            .liquidGlass(cornerRadius: 30, intensity: 0.92)
+            .instrumentPanel(cornerRadius: 30)
             .padding(18)
         }
     }

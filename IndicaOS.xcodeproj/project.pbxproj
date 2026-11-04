@@ -17,6 +17,9 @@
 		A10000000000000000000014 /* LocalCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* LocalCalendar.swift */; };
 		A10000000000000000000015 /* ClockApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* ClockApp.swift */; };
 		A10000000000000000000016 /* FilesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* FilesApp.swift */; };
+		A10000000000000000000018 /* InstrumentTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* InstrumentTokens.swift */; };
+		A10000000000000000000019 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* DesignSystem.swift */; };
+		A1000000000000000000001A /* InstrumentIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* InstrumentIcons.swift */; };
 		A10000000000000000000017 /* VoiceMemos.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* VoiceMemos.swift */; };
 		A10000000000000000000005 /* SystemShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* SystemShell.swift */; };
 		A10000000000000000000006 /* CoreApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* CoreApps.swift */; };
@@ -39,6 +42,9 @@
 		A20000000000000000000014 /* LocalCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCalendar.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* ClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000016 /* FilesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000018 /* InstrumentTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentTokens.swift; sourceTree = "<group>"; };
+		A20000000000000000000019 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* InstrumentIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentIcons.swift; sourceTree = "<group>"; };
 		A20000000000000000000017 /* VoiceMemos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMemos.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* SystemShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemShell.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* CoreApps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreApps.swift; sourceTree = "<group>"; };
@@ -81,6 +87,9 @@
 				A20000000000000000000014 /* LocalCalendar.swift */,
 				A20000000000000000000015 /* ClockApp.swift */,
 				A20000000000000000000016 /* FilesApp.swift */,
+				A20000000000000000000018 /* InstrumentTokens.swift */,
+				A20000000000000000000019 /* DesignSystem.swift */,
+				A2000000000000000000001A /* InstrumentIcons.swift */,
 				A20000000000000000000017 /* VoiceMemos.swift */,
 				A20000000000000000000005 /* SystemShell.swift */,
 				A20000000000000000000006 /* CoreApps.swift */,
@@ -181,6 +190,9 @@
 				A10000000000000000000014 /* LocalCalendar.swift in Sources */,
 				A10000000000000000000015 /* ClockApp.swift in Sources */,
 				A10000000000000000000016 /* FilesApp.swift in Sources */,
+				A10000000000000000000018 /* InstrumentTokens.swift in Sources */,
+				A10000000000000000000019 /* DesignSystem.swift in Sources */,
+				A1000000000000000000001A /* InstrumentIcons.swift in Sources */,
 				A10000000000000000000017 /* VoiceMemos.swift in Sources */,
 				A10000000000000000000005 /* SystemShell.swift in Sources */,
 				A10000000000000000000006 /* CoreApps.swift in Sources */,

@@ -33,6 +33,7 @@ enum IndicaAppearance: String, CaseIterable, Identifiable {
 }
 
 enum IndicaAccent: String, CaseIterable, Identifiable {
+    case signal = "Signal"
     case champagne = "Champagne"
     case violet = "Violet"
     case blue = "Blue"
@@ -45,6 +46,8 @@ enum IndicaAccent: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
+        // The text form of the signal color, since the accent also tints text buttons.
+        case .signal: Instrument.signalText
         case .champagne: Color(hex: 0xB88C68)
         case .violet: Color(hex: 0x8B7CFF)
         case .blue: Color(hex: 0x3185FF)
@@ -52,6 +55,14 @@ enum IndicaAccent: String, CaseIterable, Identifiable {
         case .green: Color(hex: 0x35C66B)
         case .coral: Color(hex: 0xFF765F)
         case .rose: Color(hex: 0xF05F9E)
+        }
+    }
+
+    /// A glyph on a solid tile of this color.
+    var onColor: Color {
+        switch self {
+        case .signal: Instrument.surface
+        default: Color(hex: InstrumentTokens.ink.light)
         }
     }
 }
@@ -108,6 +119,7 @@ enum NotificationPreviewStyle: String, CaseIterable, Identifiable {
 }
 
 enum WallpaperStyle: String, CaseIterable, Identifiable {
+    case instrument = "Instrument"
     case aura = "Aura"
     case tide = "Tide"
     case bloom = "Bloom"
@@ -119,6 +131,8 @@ enum WallpaperStyle: String, CaseIterable, Identifiable {
 
     var colors: [Color] {
         switch self {
+        case .instrument:
+            [Instrument.ground]
         case .aura:
             [Color(hex: 0x05070C), Color(hex: 0x111722), Color(hex: 0x746052)]
         case .tide:
@@ -134,8 +148,40 @@ enum WallpaperStyle: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Text and glyphs directly on the wallpaper. The gradient wallpapers are one
+    /// brightness in either appearance; only Instrument's ground follows it.
     var foreground: Color {
-        self == .daylight ? Color.black.opacity(0.88) : .white
+        switch self {
+        case .instrument: Instrument.ink
+        case .daylight: Color(hex: InstrumentTokens.ink.light)
+        default: .white
+        }
+    }
+
+    var secondaryForeground: Color {
+        self == .instrument ? Instrument.inkSecondary : foreground.opacity(0.76)
+    }
+
+    var ruleForeground: Color {
+        self == .instrument ? Instrument.ink : foreground.opacity(0.6)
+    }
+
+    /// The accent as small text, chosen to read on this wallpaper.
+    var signalForeground: Color {
+        switch self {
+        case .instrument: Instrument.signalText
+        case .daylight: Color(hex: InstrumentTokens.signalText.light)
+        default: Color(hex: InstrumentTokens.signalText.dark)
+        }
+    }
+
+    /// A glyph on a solid `foreground` tile, as in the dock.
+    var invertedForeground: Color {
+        switch self {
+        case .instrument: Instrument.ground
+        case .daylight: Color(hex: InstrumentTokens.ground.light)
+        default: Color(hex: InstrumentTokens.ground.dark)
+        }
     }
 }
 
@@ -536,7 +582,7 @@ final class IndicaSystem: ObservableObject {
     }
     @Published var accentStyle: IndicaAccent = IndicaAccent(
         rawValue: UserDefaults.standard.string(forKey: "accentStyle") ?? ""
-    ) ?? .champagne {
+    ) ?? .signal {
         didSet { UserDefaults.standard.set(accentStyle.rawValue, forKey: "accentStyle") }
     }
     @Published var iconAppearance: AppIconAppearance = AppIconAppearance(
@@ -558,12 +604,6 @@ final class IndicaSystem: ObservableObject {
         rawValue: UserDefaults.standard.string(forKey: "notificationPreviews") ?? ""
     ) ?? .unlocked {
         didSet { UserDefaults.standard.set(notificationPreviews.rawValue, forKey: "notificationPreviews") }
-    }
-    @Published var glassIntensity: Double = UserDefaults.standard.object(forKey: "glassIntensity") as? Double ?? 0.72 {
-        didSet { UserDefaults.standard.set(glassIntensity, forKey: "glassIntensity") }
-    }
-    @Published var reduceTransparency = UserDefaults.standard.bool(forKey: "reduceTransparency") {
-        didSet { UserDefaults.standard.set(reduceTransparency, forKey: "reduceTransparency") }
     }
     @Published var reduceMotion = UserDefaults.standard.bool(forKey: "reduceMotion") {
         didSet { UserDefaults.standard.set(reduceMotion, forKey: "reduceMotion") }
@@ -696,7 +736,7 @@ final class IndicaSystem: ObservableObject {
 
     init() {
         appearance = IndicaAppearance(rawValue: UserDefaults.standard.string(forKey: "appearance") ?? "") ?? .automatic
-        wallpaper = WallpaperStyle(rawValue: UserDefaults.standard.string(forKey: "wallpaper") ?? "") ?? .aura
+        wallpaper = WallpaperStyle(rawValue: UserDefaults.standard.string(forKey: "wallpaper") ?? "") ?? .instrument
         notes = Self.load(SampleContent.notes(), key: "notes")
         reminders = Self.load(SampleContent.reminders(), key: "reminders")
         messages = Self.load(SampleContent.messages(), key: "messages")
@@ -725,14 +765,14 @@ final class IndicaSystem: ObservableObject {
     }
 
     func finishBoot() {
-        withAnimation(.spring(response: 0.65, dampingFraction: 0.86)) {
+        withAnimation(Instrument.motion) {
             phase = .locked
         }
     }
 
     func unlock() {
         HapticEngine.play(.success, enabled: hapticsEnabled)
-        withAnimation(.spring(response: 0.58, dampingFraction: 0.84)) {
+        withAnimation(Instrument.motion) {
             overlay = nil
             phase = .home
         }
@@ -740,7 +780,7 @@ final class IndicaSystem: ObservableObject {
 
     func lock() {
         HapticEngine.play(.rigid, enabled: hapticsEnabled)
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
+        withAnimation(Instrument.motion) {
             overlay = nil
             isEditingHome = false
             phase = .locked
@@ -752,7 +792,7 @@ final class IndicaSystem: ObservableObject {
         appHistory.removeAll { $0 == app }
         appHistory.insert(app, at: 0)
         appHistory = Array(appHistory.prefix(6))
-        withAnimation(.spring(response: 0.48, dampingFraction: 0.86)) {
+        withAnimation(Instrument.motion) {
             overlay = nil
             phase = .app(app)
         }
@@ -760,7 +800,7 @@ final class IndicaSystem: ObservableObject {
 
     func goHome() {
         HapticEngine.play(.selection, enabled: hapticsEnabled)
-        withAnimation(.spring(response: 0.48, dampingFraction: 0.88)) {
+        withAnimation(Instrument.motion) {
             overlay = nil
             phase = .home
         }
@@ -772,7 +812,7 @@ final class IndicaSystem: ObservableObject {
             return
         }
         HapticEngine.play(.medium, enabled: hapticsEnabled)
-        withAnimation(.spring(response: 0.44, dampingFraction: 0.84)) {
+        withAnimation(Instrument.motion) {
             overlay = nil
             phase = .switcher
         }
@@ -811,14 +851,12 @@ final class IndicaSystem: ObservableObject {
 
     func resetSystemSettings() {
         appearance = .automatic
-        wallpaper = .aura
-        accentStyle = .champagne
+        wallpaper = .instrument
+        accentStyle = .signal
         iconAppearance = .automatic
         homeLayoutDensity = .comfortable
         lockClockStyle = .classic
         notificationPreviews = .unlocked
-        glassIntensity = 0.72
-        reduceTransparency = false
         reduceMotion = false
         boldText = false
         textScale = 1

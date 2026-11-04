@@ -82,7 +82,7 @@ struct SystemShell: View {
                 let startedAtBottom = value.startLocation.y > size.height - 172
 
                 if startedAtTop, value.translation.height > 70 {
-                    withAnimation(.spring(response: 0.44, dampingFraction: 0.88)) {
+                    withAnimation(Instrument.motion) {
                         system.overlay = value.startLocation.x > size.width * 0.53 ? .controlCenter : .notifications
                     }
                 } else if startedAtBottom, value.translation.height < -46 {
@@ -102,27 +102,18 @@ struct SystemShell: View {
 }
 
 private struct BootScreen: View {
-    @State private var breathing = false
-
     var body: some View {
         ZStack {
-            Color.black
+            Instrument.ground
 
             VStack(spacing: 18) {
                 IndicaBrandMark()
                     .frame(width: 88, height: 88)
-                .scaleEffect(breathing ? 1.04 : 0.96)
-                .shadow(color: Color(hex: 0xB88C68).opacity(0.20), radius: 28)
 
                 Text("SWIFT UI")
-                    .font(.system(size: 13, weight: .semibold, design: .default))
-                    .tracking(6)
-                    .foregroundStyle(.white.opacity(0.82))
-            }
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                breathing = true
+                    .font(Instrument.mono(.footnote, weight: .medium))
+                    .tracking(4)
+                    .foregroundStyle(Instrument.ink)
             }
         }
     }
@@ -170,6 +161,21 @@ private struct IndicaBrandMark: View {
 
 struct IndicaWallpaper: View {
     let style: WallpaperStyle
+
+    var body: some View {
+        if style == .instrument {
+            // Matte and still: the shell's own ground, in either appearance.
+            Instrument.ground
+        } else {
+            GradientWallpaper(style: style)
+        }
+    }
+}
+
+/// The earlier wallpapers, still offered as a choice. They hold still under Reduce Motion.
+private struct GradientWallpaper: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let style: WallpaperStyle
     @State private var drift = false
 
     var body: some View {
@@ -196,38 +202,9 @@ struct IndicaWallpaper: View {
                     .blur(radius: 92)
                     .rotationEffect(.degrees(drift ? -14 : 13))
                     .offset(x: drift ? -size.width * 0.26 : size.width * 0.18, y: size.height * 0.34)
-
-                RadialGradient(
-                    colors: [
-                        Color.white.opacity(style == .daylight ? 0.26 : 0.11),
-                        .clear
-                    ],
-                    center: .topTrailing,
-                    startRadius: 4,
-                    endRadius: size.width * 0.75
-                )
-
-                RadialGradient(
-                    colors: [
-                        Color(hex: 0xD9BFA8).opacity(style == .aura ? 0.16 : 0.04),
-                        .clear
-                    ],
-                    center: .bottomLeading,
-                    startRadius: 10,
-                    endRadius: size.width * 0.92
-                )
-
-                LinearGradient(
-                    colors: [
-                        .white.opacity(style == .daylight ? 0.20 : 0.055),
-                        .clear,
-                        .black.opacity(style == .daylight ? 0.08 : 0.32)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
             }
             .onAppear {
+                guard !reduceMotion else { return }
                 withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
                     drift.toggle()
                 }
@@ -258,14 +235,13 @@ extension EnvironmentValues {
 struct SystemStatusBar: View {
     @Environment(\.shellSafeAreaInsets) private var safeAreaInsets
     @ObservedObject private var device = DeviceStatus.shared
-    var foreground: Color = .white
+    var foreground: Color = Instrument.ink
 
     var body: some View {
         HStack {
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 Text(context.date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)))
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
+                    .font(.system(size: 15, weight: .medium, design: .monospaced))
             }
 
             Spacer()
@@ -296,42 +272,41 @@ private struct LockScreen: View {
         VStack(spacing: 0) {
             SystemStatusBar(foreground: system.wallpaper.foreground)
 
-            VStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 2) {
                 TimelineView(.periodic(from: .now, by: 60)) { context in
-                    Text(context.date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                        .font(.system(size: 18, weight: .semibold, design: .default))
-                        .tracking(-0.2)
+                    Text(context.date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)).uppercased())
+                        .font(Instrument.mono(.footnote, weight: .medium))
+                        .foregroundStyle(system.wallpaper.secondaryForeground)
                 }
 
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(context.date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)))
                         .font(.system(size: 82, weight: system.lockClockStyle.weight, design: system.lockClockStyle.design))
-                        .tracking(system.lockClockStyle == .classic ? -5.4 : -4)
+                        .tracking(system.lockClockStyle == .classic ? -4 : -2)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .contentTransition(.numericText())
                 }
             }
-            .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
-            .padding(.top, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
 
             if system.showLockWidgets {
-                HStack(spacing: 10) {
-                    LockWidget(symbol: "cloud.sun.fill", title: "72°", detail: "Brooklyn")
-                    LockWidget(symbol: "figure.walk", title: "5,804", detail: "steps")
-                    LockWidget(symbol: "calendar", title: "2:30", detail: "Review")
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 20)
+                LedgerStrip()
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
             }
 
             Spacer()
 
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 ForEach(system.notifications.prefix(2)) { notification in
                     NotificationCard(notification: notification, compact: true)
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 20)
 
             Spacer(minLength: 22)
 
@@ -339,10 +314,10 @@ private struct LockScreen: View {
                 LockActionButton(symbol: "flashlight.on.fill") {}
                 Spacer()
                 Text("Swipe up to open")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(system.wallpaper.foreground.opacity(0.72))
+                    .font(.footnote)
+                    .foregroundStyle(system.wallpaper.secondaryForeground)
                 Spacer()
-                LockActionButton(symbol: "camera.fill") {
+                LockActionButton(symbol: "camera") {
                     system.unlock()
                     Task {
                         try? await Task.sleep(for: .milliseconds(320))
@@ -350,12 +325,11 @@ private struct LockScreen: View {
                     }
                 }
             }
-            .padding(.horizontal, 28)
-
-            HomeIndicator(color: system.wallpaper.foreground)
-                .padding(.top, 16)
-                .padding(.bottom, 9)
+            .padding(.horizontal, 20)
+            // Room for the home bar, which iOS draws.
+            .padding(.bottom, 34)
         }
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .offset(y: dragOffset)
         .gesture(
             DragGesture(minimumDistance: 10)
@@ -366,39 +340,17 @@ private struct LockScreen: View {
                     if value.translation.height < -70 {
                         system.unlock()
                     }
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                    withAnimation(Instrument.motion) {
                         dragOffset = 0
                     }
                 }
         )
         .onLongPressGesture(minimumDuration: 0.55) {
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            withAnimation(Instrument.motion) {
                 system.overlay = .lockCustomization
             }
         }
         .foregroundStyle(system.wallpaper.foreground)
-    }
-}
-
-private struct LockWidget: View {
-    let symbol: String
-    let title: String
-    let detail: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Image(systemName: symbol)
-                .font(.system(size: 15, weight: .semibold))
-            Text(title)
-                .font(.system(size: 17, weight: .semibold, design: .default))
-            Text(detail)
-                .font(.system(size: 10, weight: .medium, design: .default))
-                .opacity(0.68)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(.black.opacity(0.10), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .liquidGlass(cornerRadius: 20, intensity: 0.48)
     }
 }
 
@@ -409,9 +361,10 @@ private struct LockActionButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(Instrument.ink)
                 .frame(width: 48, height: 48)
-                .liquidGlass(cornerRadius: 24, intensity: 0.72)
+                .instrumentPanel(cornerRadius: 12)
         }
         .buttonStyle(PressableButtonStyle())
     }
@@ -444,14 +397,14 @@ private struct HomeScreen: View {
                         ForEach(Array(system.homePages.enumerated()), id: \.offset) { pageIndex, apps in
                             VStack(spacing: metrics.sectionSpacing) {
                                 if pageIndex == 0 {
-                                    HomeWidgetRow(height: metrics.widgetHeight)
+                                    LedgerStrip(verticalPadding: metrics.ledgerVerticalPadding)
                                         .padding(.horizontal, metrics.horizontalPadding)
                                 } else if pageIndex == 1 {
                                     SearchWidget { openSearchUnlessSwiped() }
                                         .padding(.horizontal, metrics.horizontalPadding)
                                 } else {
-                                    LibraryHeader()
-                                        .padding(.horizontal, metrics.horizontalPadding + 2)
+                                    LibraryHeader(verticalPadding: metrics.ledgerVerticalPadding)
+                                        .padding(.horizontal, metrics.horizontalPadding)
                                 }
 
                                 LazyVGrid(
@@ -489,52 +442,33 @@ private struct HomeScreen: View {
                     pager: pager,
                     motion: pager.motion,
                     pageCount: system.homePages.count,
-                    foreground: system.wallpaper.foreground,
                     onSearch: { isSearching = true }
                 )
                 .padding(.vertical, metrics.pageIndicatorPadding)
 
-                HStack(spacing: metrics.dockSpacing) {
+                InstrumentRule(color: system.wallpaper.ruleForeground)
+                    .padding(.horizontal, metrics.horizontalPadding)
+
+                // The same columns as the grid, so the dock lines up with the rows above it.
+                HStack(spacing: metrics.columnSpacing) {
                     ForEach(system.dockApps) { app in
                         AppIcon(
                             app: app,
                             isEditing: false,
-                            size: metrics.dockIconSize,
-                            showsLabel: false
+                            size: metrics.iconSize,
+                            showsLabel: false,
+                            isInDock: true
                         ) {
                             system.open(app)
                         }
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 14)
-                .padding(.vertical, metrics.dockVerticalPadding)
-                .background(
-                    Color.black.opacity(0.13),
-                    in: RoundedRectangle(cornerRadius: 31, style: .continuous)
-                )
-                .liquidGlass(cornerRadius: 31, intensity: 0.58)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 31, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color(hex: 0xE8D1BA).opacity(0.24),
-                                    .white.opacity(0.06),
-                                    .black.opacity(0.18)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.65
-                        )
-                }
-                .shadow(color: .black.opacity(0.24), radius: 18, y: 9)
-                .padding(.horizontal, metrics.dockHorizontalPadding)
+                .padding(.horizontal, metrics.horizontalPadding)
+                .padding(.top, metrics.dockVerticalPadding)
 
-                HomeIndicator(color: system.wallpaper.foreground)
-                    .padding(.top, metrics.homeIndicatorTopPadding)
-                    .padding(.bottom, 7)
+                // iOS draws the home bar here, so the shell doesn't draw a second one.
+                Color.clear
+                    .frame(height: metrics.homeBarClearance)
             }
             .onChange(of: pager.page) { _, newPage in
                 UIAccessibility.post(
@@ -553,19 +487,22 @@ private struct HomeScreen: View {
                 if system.isEditingHome {
                     Button("Done") {
                         HapticEngine.play(.selection, enabled: system.hapticsEnabled)
-                        withAnimation(.spring(response: 0.36, dampingFraction: 0.82)) {
+                        withAnimation(Instrument.motion) {
                             system.isEditingHome = false
                         }
                     }
-                    .font(.system(size: 14, weight: .bold, design: .default))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Instrument.ink)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 9)
-                    .liquidGlass(cornerRadius: 18, intensity: 0.78)
+                    .instrumentPanel(cornerRadius: 18)
                     .padding(.top, 64)
                     .padding(.trailing, 18)
                 }
             }
             .foregroundStyle(system.wallpaper.foreground)
+            // Home is a fixed layout with no scrolling, like the iOS Home Screen.
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         }
         // Presented outside the wallpaper text color so search uses system colors.
         .sheet(isPresented: $isSearching) {
@@ -576,7 +513,7 @@ private struct HomeScreen: View {
 
     private func toggleEditing() {
         HapticEngine.play(.rigid, enabled: system.hapticsEnabled)
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
+        withAnimation(Instrument.motion) {
             system.isEditingHome.toggle()
         }
     }
@@ -594,33 +531,32 @@ private struct HomeLayoutMetrics {
     private var compactHeight: Bool { size.height < 860 }
 
     var columnCount: Int { density == .compact ? 5 : 4 }
-    var horizontalPadding: CGFloat { size.width >= 430 ? 20 : 16 }
-    var sectionSpacing: CGFloat { compactHeight ? 8 : 12 }
-    var columnSpacing: CGFloat { density == .compact ? 7 : (compactHeight ? 9 : 12) }
+    var horizontalPadding: CGFloat { 20 }
+    var sectionSpacing: CGFloat { compactHeight ? 12 : 20 }
+    var columnSpacing: CGFloat { density == .compact ? 7 : 12 }
     var rowSpacing: CGFloat { density == .compact ? (compactHeight ? 8 : 11) : (compactHeight ? 10 : 16) }
     var iconSize: CGFloat {
         if density == .compact {
             return compactHeight ? 49 : 52
         }
-        return compactHeight ? 56 : 60
+        return compactHeight ? 58 : 62
     }
-    var dockIconSize: CGFloat { compactHeight ? 56 : 60 }
-    var widgetHeight: CGFloat { compactHeight ? 92 : 101 }
-    var pageIndicatorPadding: CGFloat { compactHeight ? 5 : 8 }
-    var dockVerticalPadding: CGFloat { compactHeight ? 8 : 10 }
-    var dockHorizontalPadding: CGFloat { size.width >= 430 ? 18 : 14 }
-    var dockSpacing: CGFloat { size.width >= 430 ? 17 : 13 }
-    var homeIndicatorTopPadding: CGFloat { compactHeight ? 6 : 9 }
+    var ledgerVerticalPadding: CGFloat { compactHeight ? 8 : 12 }
+    var pageIndicatorPadding: CGFloat { compactHeight ? 6 : 10 }
+    var dockVerticalPadding: CGFloat { compactHeight ? 8 : 12 }
+    var homeBarClearance: CGFloat { compactHeight ? 26 : 30 }
 }
 
-private struct HomeWidgetRow: View {
+/// The ruled strip at the top of Home and the Lock Screen: the real next event, and
+/// the labeled sample weather.
+struct LedgerStrip: View {
     @EnvironmentObject private var system: IndicaSystem
-    let height: CGFloat
+    var verticalPadding: CGFloat = 12
 
     /// The real next event, checked again each minute.
-    private func upNextText(at now: Date) -> (title: String, detail: String) {
+    private func upNext(at now: Date) -> (title: String, detail: String, hasEvent: Bool) {
         guard let event = CalendarEvent.next(in: system.calendarEvents, after: now, calendar: .current) else {
-            return ("No upcoming events", "Calendar")
+            return ("Nothing scheduled", "Calendar", false)
         }
         let start = event.localInterval(in: .current).start
         let detail: String
@@ -631,60 +567,53 @@ private struct HomeWidgetRow: View {
         } else {
             detail = start.formatted(.dateTime.month(.abbreviated).day().hour().minute())
         }
-        return (event.title, detail)
+        return (event.title, detail, true)
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack {
-                    Text("BROOKLYN")
-                        .tracking(1.5)
-                    Spacer()
-                    Image(systemName: "location.fill")
-                }
-                .font(.system(size: 9, weight: .bold, design: .default))
-                .opacity(0.64)
-                HStack(alignment: .top, spacing: 5) {
-                    Text("72°")
-                        .font(.system(size: 34, weight: .medium, design: .default))
-                        .tracking(-1.4)
-                    Image(systemName: "cloud.sun.fill")
-                        .symbolRenderingMode(.multicolor)
-                        .font(.system(size: 19))
-                }
-                Text("Sample weather")
-                    .font(.system(size: 10, weight: .medium))
-                    .opacity(0.66)
+        let wallpaper = system.wallpaper
+        HStack(spacing: 0) {
+            TimelineView(.everyMinute) { context in
+                let next = upNext(at: context.date)
+                cell(
+                    label: "UP NEXT",
+                    title: next.title,
+                    value: next.detail,
+                    valueColor: next.hasEvent ? wallpaper.signalForeground : wallpaper.secondaryForeground
+                )
+                .padding(.trailing, 12)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
-            .background(.black.opacity(0.12), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .liquidGlass(cornerRadius: 24, intensity: 0.56)
 
-            VStack(alignment: .leading, spacing: 7) {
-                Text("UP NEXT")
-                    .font(.system(size: 9, weight: .bold, design: .default))
-                    .tracking(1.5)
-                    .opacity(0.62)
-                TimelineView(.everyMinute) { context in
-                    let next = upNextText(at: context.date)
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text(next.title)
-                            .font(.system(size: 14, weight: .semibold, design: .default))
-                            .lineLimit(2)
-                        Text(next.detail)
-                            .font(.system(size: 11, weight: .semibold))
-                            .opacity(0.72)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(14)
-            .background(.black.opacity(0.12), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .liquidGlass(cornerRadius: 24, intensity: 0.56)
+            cell(
+                label: "SAMPLE WEATHER",
+                title: "Brooklyn",
+                value: "72°",
+                valueColor: wallpaper.foreground
+            )
+            .padding(.leading, 12)
         }
-        .frame(height: height)
+        .padding(.vertical, verticalPadding)
+        .overlay { wallpaper.ruleForeground.frame(width: Instrument.hairline) }
+        .overlay(alignment: .top) { InstrumentRule(color: wallpaper.ruleForeground) }
+        .overlay(alignment: .bottom) { InstrumentRule(color: wallpaper.ruleForeground) }
+        .foregroundStyle(wallpaper.foreground)
+    }
+
+    private func cell(label: String, title: String, value: String, valueColor: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(Instrument.mono(.caption2))
+                .foregroundStyle(system.wallpaper.secondaryForeground)
+            Text(title)
+                .font(.headline)
+            Text(value)
+                .font(Instrument.mono(.footnote))
+                .foregroundStyle(valueColor)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -698,7 +627,6 @@ private struct SearchPagePill: View {
     @ObservedObject var pager: HomePager
     @ObservedObject var motion: HomePagerMotion
     let pageCount: Int
-    let foreground: Color
     let onSearch: () -> Void
 
     private enum Phase {
@@ -715,30 +643,37 @@ private struct SearchPagePill: View {
     private let moveTolerance: CGFloat = 10
 
     var body: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 10) {
             if phase != .scrubbing {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.caption)
 
                 Text("Search")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .font(.footnote)
             }
 
-            HStack(spacing: phase == .scrubbing ? 8 : 4) {
+            // The ruler: one tick per page. The tick nearest the position grows and
+            // takes the signal color, continuously, so it tracks the finger in a scrub.
+            HStack(spacing: phase == .scrubbing ? 14 : 7) {
                 ForEach(0..<pageCount, id: \.self) { index in
-                    // Each dot grows as the position nears it, so the indicator tracks the finger.
                     let nearness = max(0, 1 - abs(motion.position - CGFloat(index)))
-                    Capsule()
-                        .fill(foreground.opacity(0.32 + 0.6 * nearness))
-                        .frame(width: 5 + 7 * nearness, height: 5)
+                    ZStack(alignment: .bottom) {
+                        Instrument.ink
+                            .frame(width: 1, height: 7)
+                        Instrument.signal
+                            .frame(width: 2, height: 7 + 7 * nearness)
+                            .opacity(nearness)
+                    }
+                    .frame(width: 2, height: 14, alignment: .bottom)
                 }
             }
         }
-        .padding(.horizontal, phase == .scrubbing ? 18 : 11)
-        .frame(height: 28)
-        .liquidGlass(cornerRadius: 14, intensity: 0.54)
-        .scaleEffect(phase == .pressing ? 0.95 : (phase == .scrubbing ? 1.12 : 1))
-        .animation(.spring(response: 0.26, dampingFraction: 0.78), value: phase)
+        .foregroundStyle(Instrument.ink)
+        .padding(.horizontal, phase == .scrubbing ? 18 : 14)
+        .frame(minHeight: 36)
+        .instrumentPanel(cornerRadius: 18)
+        .scaleEffect(phase == .pressing ? 0.97 : 1)
+        .animation(Instrument.press, value: phase)
         .contentShape(Rectangle().inset(by: -10))
         // High priority keeps the hold from also starting Home Screen editing or a page swipe.
         .highPriorityGesture(
@@ -821,14 +756,15 @@ private struct SearchWidget: View {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
                 Text("Search apps and notes")
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .opacity(0.72)
+                    .font(.subheadline)
+                    .foregroundStyle(Instrument.inkSecondary)
                 Spacer()
             }
+            .foregroundStyle(Instrument.ink)
             .padding(.horizontal, 17)
-            .frame(height: 50)
+            .frame(minHeight: 50)
             .contentShape(Rectangle())
-            .liquidGlass(cornerRadius: 25, intensity: 0.72)
+            .instrumentPanel(cornerRadius: 14)
         }
         .buttonStyle(PressableButtonStyle(scale: 0.98))
         .accessibilityLabel("Search apps and notes")
@@ -938,21 +874,24 @@ private struct AppSearchView: View {
 }
 
 private struct LibraryHeader: View {
+    @EnvironmentObject private var system: IndicaSystem
+    var verticalPadding: CGFloat = 12
+
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("App Library")
-                    .font(.system(size: 27, weight: .bold, design: .default))
-                Text("Utilities and extras")
-                    .font(.system(size: 13, weight: .medium))
-                    .opacity(0.65)
-            }
-            Spacer()
-            Image(systemName: "square.grid.2x2")
-                .font(.system(size: 19, weight: .semibold))
+        VStack(alignment: .leading, spacing: 3) {
+            Text("App Library")
+                .font(.title3.weight(.semibold))
+                .tracking(-0.3)
+            Text("Utilities and extras")
+                .font(.footnote)
+                .foregroundStyle(system.wallpaper.secondaryForeground)
         }
-        .padding(16)
-        .liquidGlass(cornerRadius: 25, intensity: 0.68)
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, verticalPadding)
+        .overlay(alignment: .top) { InstrumentRule(color: system.wallpaper.ruleForeground) }
+        .overlay(alignment: .bottom) { InstrumentRule(color: system.wallpaper.ruleForeground) }
     }
 }
 
@@ -960,8 +899,9 @@ private struct AppIcon: View {
     @EnvironmentObject private var system: IndicaSystem
     let app: BuiltInApp
     let isEditing: Bool
-    var size: CGFloat = 60
+    var size: CGFloat = 62
     var showsLabel = true
+    var isInDock = false
     var cancelsPress = false
     let action: () -> Void
     @State private var wiggle = false
@@ -969,36 +909,32 @@ private struct AppIcon: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 5) {
-                PremiumAppMark(app: app, size: size)
-                .overlay {
-                    if system.iconAppearance == .clear {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(.white.opacity(0.52), lineWidth: 0.8)
+                AppMark(app: app, size: size, isInverted: isInDock, isOnWallpaper: true)
+                    .overlay(alignment: .topLeading) {
+                        if isEditing {
+                            Image(systemName: "minus")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Instrument.surface)
+                                .frame(width: 20, height: 20)
+                                .background(Instrument.ink, in: Circle())
+                                .offset(x: -6, y: -6)
+                        }
                     }
-                }
-                .overlay(alignment: .topLeading) {
-                    if isEditing {
-                        Image(systemName: "minus")
-                            .font(.system(size: 10, weight: .black))
-                            .foregroundStyle(.black)
-                            .frame(width: 19, height: 19)
-                            .background(.white, in: Circle())
-                            .offset(x: -5, y: -5)
-                    }
-                }
 
                 if showsLabel && system.showAppLabels {
                     Text(app.name)
-                        .font(.system(size: 11, weight: .semibold, design: .default))
-                        .tracking(-0.1)
+                        .font(.caption2)
                         .lineLimit(1)
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.72), radius: 4, y: 1)
+                        .minimumScaleFactor(0.8)
+                        .foregroundStyle(system.wallpaper.foreground)
+                        // The gradient wallpapers vary under the label. Instrument's ground doesn't.
+                        .shadow(color: system.wallpaper == .instrument ? .clear : .black.opacity(0.5), radius: 3, y: 1)
                 }
             }
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(PressableButtonStyle(cancelsPress: cancelsPress))
+        .accessibilityLabel(app.name)
         .rotationEffect(.degrees(isEditing ? (wiggle ? 1.5 : -1.5) : 0))
         .onChange(of: isEditing) { _, newValue in
             if newValue {
@@ -1008,326 +944,6 @@ private struct AppIcon: View {
             } else {
                 wiggle = false
             }
-        }
-    }
-}
-
-struct PremiumAppMark: View {
-    @EnvironmentObject private var system: IndicaSystem
-    let app: BuiltInApp
-    var size: CGFloat = 60
-
-    private var cornerRadius: CGFloat { size * 0.27 }
-
-    private var automaticColors: [Color] {
-        switch app {
-        case .calendar:
-            [Color(hex: 0xFAFAF8), Color(hex: 0xD9DDE2)]
-        case .photos:
-            [Color(hex: 0xFBFAF6), Color(hex: 0xDDE2E7)]
-        case .health:
-            [Color(hex: 0xFAF8F7), Color(hex: 0xE1E3E8)]
-        case .maps:
-            [Color(hex: 0xDCE9D8), Color(hex: 0x80B6A9)]
-        case .notes:
-            [Color(hex: 0xF4D66B), Color(hex: 0xC99B2D)]
-        case .camera, .clock, .compass, .stocks, .watch, .notion:
-            [Color(hex: 0x3B414A), Color(hex: 0x080A0D)]
-        case .wallet:
-            [Color(hex: 0x41464E), Color(hex: 0x111318)]
-        case .settings:
-            [Color(hex: 0xB9BEC6), Color(hex: 0x4B515C)]
-        default:
-            [
-                (app.palette.first ?? Color(hex: 0x6E7785)).opacity(0.86),
-                (app.palette.last ?? Color(hex: 0x242832)).opacity(0.92)
-            ]
-        }
-    }
-
-    private var surfaceColors: [Color] {
-        switch system.iconAppearance {
-        case .automatic:
-            automaticColors
-        case .light:
-            [automaticColors.first ?? .white, Color.white.opacity(0.88)]
-        case .dark:
-            [automaticColors.first?.opacity(0.76) ?? .gray, Color(hex: 0x080A0D)]
-        case .clear:
-            [Color.white.opacity(0.18), Color.white.opacity(0.045)]
-        case .tinted:
-            [system.accent.opacity(0.96), Color(hex: 0x10131A)]
-        }
-    }
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.black.opacity(0.88))
-
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: surfaceColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            RadialGradient(
-                colors: [.white.opacity(0.29), .white.opacity(0.075), .clear],
-                center: .topLeading,
-                startRadius: 0,
-                endRadius: size * 0.82
-            )
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .blendMode(.screen)
-
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0),
-                    .init(color: .white.opacity(0.04), location: 0.24),
-                    .init(color: .white.opacity(0.31), location: 0.34),
-                    .init(color: .white.opacity(0.055), location: 0.45),
-                    .init(color: .clear, location: 0.62)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .blendMode(.screen)
-
-            RadialGradient(
-                colors: [
-                    (app.palette.last ?? .white).opacity(0.12),
-                    .clear
-                ],
-                center: .bottomTrailing,
-                startRadius: 0,
-                endRadius: size * 0.78
-            )
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-
-            PremiumIconGlyph(app: app, size: size)
-                .padding(size * 0.17)
-        }
-        .frame(width: size, height: size)
-        .background {
-            if system.iconAppearance == .clear {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            }
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            .white.opacity(0.48),
-                            .white.opacity(0.10),
-                            .black.opacity(0.20)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.55
-                )
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .inset(by: 1.8)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            .white.opacity(0.16),
-                            .clear,
-                            .white.opacity(0.055)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.55
-                )
-        }
-        .overlay(alignment: .top) {
-            Capsule()
-                .fill(.white.opacity(0.34))
-                .frame(width: size * 0.48, height: max(0.65, size * 0.012))
-                .blur(radius: 0.25)
-                .padding(.top, size * 0.035)
-                .blendMode(.screen)
-        }
-        .shadow(color: (app.palette.last ?? .black).opacity(0.13), radius: 9, y: 5)
-        .shadow(color: .black.opacity(0.22), radius: 9, y: 5)
-    }
-}
-
-private struct PremiumIconGlyph: View {
-    let app: BuiltInApp
-    let size: CGFloat
-
-    @ViewBuilder
-    var body: some View {
-        switch app {
-        case .calendar:
-            VStack(spacing: -1) {
-                Text(Date.now.formatted(.dateTime.weekday(.abbreviated)).uppercased())
-                    .font(.system(size: size * 0.12, weight: .black, design: .default))
-                    .tracking(0.6)
-                    .foregroundStyle(Color(hex: 0xD93543))
-                Text(Date.now.formatted(.dateTime.day()))
-                    .font(.system(size: size * 0.39, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x20242A))
-            }
-        case .photos:
-            ZStack {
-                ForEach(0..<8, id: \.self) { index in
-                    Capsule()
-                        .fill(
-                            Color(
-                                hue: Double(index) / 8.0,
-                                saturation: 0.72,
-                                brightness: 0.98
-                            )
-                        )
-                        .frame(width: size * 0.11, height: size * 0.31)
-                        .offset(y: -size * 0.12)
-                        .rotationEffect(.degrees(Double(index) * 45))
-                }
-                Circle()
-                    .fill(.white)
-                    .frame(width: size * 0.13, height: size * 0.13)
-                    .shadow(color: .black.opacity(0.16), radius: 2, y: 1)
-            }
-        case .clock:
-            ZStack {
-                Circle()
-                    .fill(Color(hex: 0xF4F0E8))
-                    .overlay {
-                        Circle().stroke(.white.opacity(0.75), lineWidth: 1)
-                    }
-                ForEach(0..<12, id: \.self) { index in
-                    Capsule()
-                        .fill(Color(hex: 0x30343B).opacity(index.isMultiple(of: 3) ? 0.92 : 0.48))
-                        .frame(width: index.isMultiple(of: 3) ? 1.8 : 1.1, height: index.isMultiple(of: 3) ? 4.4 : 3)
-                        .offset(y: -size * 0.245)
-                        .rotationEffect(.degrees(Double(index) * 30))
-                }
-                Capsule()
-                    .fill(Color(hex: 0x20242A))
-                    .frame(width: 2.2, height: size * 0.18)
-                    .offset(y: -size * 0.07)
-                    .rotationEffect(.degrees(-4), anchor: .bottom)
-                Capsule()
-                    .fill(Color(hex: 0x20242A))
-                    .frame(width: 2, height: size * 0.24)
-                    .offset(y: -size * 0.10)
-                    .rotationEffect(.degrees(92), anchor: .bottom)
-                Circle()
-                    .fill(Color(hex: 0xD44842))
-                    .frame(width: 4, height: 4)
-            }
-            .padding(size * 0.01)
-        case .camera:
-            ZStack {
-                RoundedRectangle(cornerRadius: size * 0.09, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: 0xE8EBEF), Color(hex: 0xAAB1BA)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: size * 0.58, height: size * 0.42)
-                Circle()
-                    .fill(Color(hex: 0x11151B))
-                    .frame(width: size * 0.28, height: size * 0.28)
-                    .overlay {
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [Color(hex: 0x7DAAD1), Color(hex: 0x282D38)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: size * 0.055
-                            )
-                    }
-                Circle()
-                    .fill(.white.opacity(0.82))
-                    .frame(width: size * 0.055, height: size * 0.055)
-                    .offset(x: size * 0.20, y: -size * 0.12)
-            }
-        case .weather:
-            Image(systemName: "cloud.sun.fill")
-                .symbolRenderingMode(.multicolor)
-                .font(.system(size: size * 0.48, weight: .semibold))
-        case .notes:
-            ZStack {
-                RoundedRectangle(cornerRadius: size * 0.055, style: .continuous)
-                    .fill(Color(hex: 0xFFFDF6))
-                    .frame(width: size * 0.52, height: size * 0.55)
-                VStack(spacing: size * 0.055) {
-                    ForEach(0..<4, id: \.self) { index in
-                        Capsule()
-                            .fill(Color(hex: 0x8D7853).opacity(0.72))
-                            .frame(width: index == 3 ? size * 0.25 : size * 0.36, height: 1.5)
-                    }
-                }
-            }
-        case .maps:
-            ZStack {
-                Image(systemName: "map.fill")
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(Color(hex: 0xF2F3EA), Color(hex: 0x5F9B82))
-                    .font(.system(size: size * 0.49, weight: .semibold))
-                Image(systemName: "mappin.circle.fill")
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(Color(hex: 0xE24E48), .white)
-                    .font(.system(size: size * 0.24, weight: .bold))
-                    .offset(x: size * 0.10, y: -size * 0.09)
-            }
-        case .settings:
-            Image(systemName: "gearshape.fill")
-                .symbolRenderingMode(.hierarchical)
-                .font(.system(size: size * 0.48, weight: .semibold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.white, Color(hex: 0xD2D7DE)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: .black.opacity(0.24), radius: 2, y: 1)
-        case .health:
-            Image(systemName: "heart.fill")
-                .font(.system(size: size * 0.43, weight: .semibold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color(hex: 0xFF5D78), Color(hex: 0xD71F48)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: Color(hex: 0xD71F48).opacity(0.24), radius: 4, y: 2)
-        case .browser:
-            ZStack {
-                Circle()
-                    .fill(.white.opacity(0.94))
-                Circle()
-                    .stroke(Color(hex: 0xD7E6EE), lineWidth: 1)
-                Image(systemName: "location.north.fill")
-                    .font(.system(size: size * 0.28, weight: .bold))
-                    .foregroundStyle(Color(hex: 0x287FD0))
-                    .rotationEffect(.degrees(42))
-            }
-            .padding(size * 0.02)
-        default:
-            Image(systemName: app.symbol)
-                .symbolRenderingMode(.hierarchical)
-                .font(.system(size: size * 0.42, weight: .semibold))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.24), radius: 2, y: 1)
         }
     }
 }
@@ -1353,12 +969,13 @@ private struct AppHost: View {
                     // Below the content, so it never collides with navigation bar controls.
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         if app.isConceptDemo {
-                            Label("Concept demo · sample data", systemImage: "theatermasks")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                            Text("CONCEPT DEMO · SAMPLE DATA")
+                                .font(Instrument.mono(.caption2))
+                                .foregroundStyle(Instrument.inkSecondary)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .background(.thinMaterial, in: Capsule())
+                                .background(Instrument.surface, in: Capsule())
+                                .overlay { Capsule().stroke(Instrument.rule, lineWidth: Instrument.hairline) }
                                 .padding(.vertical, 4)
                                 .accessibilityLabel("Concept demo. This app shows sample data and simulated results.")
                         }
@@ -1374,93 +991,50 @@ private struct AppHost: View {
 private struct HybridAppNavigationBar: View {
     @EnvironmentObject private var system: IndicaSystem
     @State private var dragLift: CGFloat = 0
-    @State private var isHintVisible = true
 
     var body: some View {
-        VStack(spacing: 3) {
-            HStack(spacing: 12) {
-                Button {
-                    system.goHome()
-                } label: {
-                    Image(systemName: "chevron.backward")
-                        .font(.system(size: 14, weight: .bold))
-                        .frame(width: 42, height: 38)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Back to Home")
-
-                Button {
-                    system.goHome()
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 7, weight: .black))
-                            .opacity(isHintVisible ? 0.72 : 0.32)
-
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.primary.opacity(0.96),
-                                        Color.primary.opacity(0.66)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .frame(width: 106, height: 5)
-                            .shadow(color: Color.primary.opacity(0.20), radius: 5)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 38)
+        HStack(spacing: 0) {
+            Button {
+                system.goHome()
+            } label: {
+                Image(systemName: "chevron.backward")
+                    .font(.system(size: 17, weight: .regular))
+                    .frame(width: 44, height: 44, alignment: .leading)
                     .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Home")
-                .accessibilityHint("Tap or swipe up to return to the Home Screen")
-
-                Button {
-                    system.showSwitcher()
-                } label: {
-                    Image(systemName: "rectangle.stack.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .frame(width: 42, height: 38)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Recent Apps")
             }
-            .buttonStyle(PressableButtonStyle(scale: 0.91))
+            .accessibilityLabel("Back to Home")
 
-            if isHintVisible {
-                Text("Swipe up for Home")
-                    .font(.system(size: 8, weight: .semibold, design: .rounded))
-                    .tracking(0.3)
-                    .foregroundStyle(.secondary)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            Button {
+                system.goHome()
+            } label: {
+                Instrument.ink
+                    .frame(width: 134, height: 2)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
             }
+            .accessibilityLabel("Home")
+            .accessibilityHint("Tap or swipe up to return to the Home Screen")
+
+            Button {
+                system.showSwitcher()
+            } label: {
+                Image("glyph-recents")
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 21, height: 21)
+                    .frame(width: 44, height: 44, alignment: .trailing)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Recent Apps")
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
+        .buttonStyle(PressableButtonStyle(scale: 0.9))
+        .foregroundStyle(Instrument.ink)
+        .padding(.horizontal, 20)
+        .padding(.top, 4)
+        .padding(.bottom, 14)
         .frame(maxWidth: .infinity)
-        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .liquidGlass(cornerRadius: 28, intensity: 0.96)
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            .white.opacity(0.46),
-                            .white.opacity(0.10),
-                            .black.opacity(0.14)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.75
-                )
-        }
-        .shadow(color: system.accent.opacity(0.10), radius: 16, y: 7)
-        .padding(.horizontal, 16)
-        .padding(.top, 7)
-        .padding(.bottom, 18)
+        .background(Instrument.surface)
+        .overlay(alignment: .top) { InstrumentRule() }
         .offset(y: dragLift)
         .contentShape(Rectangle())
         .highPriorityGesture(
@@ -1472,19 +1046,11 @@ private struct HybridAppNavigationBar: View {
                     if value.translation.height < -30 {
                         system.goHome()
                     }
-                    withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
+                    withAnimation(Instrument.motion) {
                         dragLift = 0
                     }
                 }
         )
-        .onAppear {
-            Task {
-                try? await Task.sleep(for: .seconds(2.8))
-                withAnimation(.easeOut(duration: 0.38)) {
-                    isHintVisible = false
-                }
-            }
-        }
     }
 }
 
@@ -1556,14 +1122,14 @@ private struct AppSwitcher: View {
             Spacer()
 
             Text("Tap a card to open it. Swipe up to close it.")
-                .font(.system(size: 11, weight: .semibold, design: .default))
-                .foregroundStyle(system.wallpaper.foreground.opacity(0.65))
+                .font(.footnote)
+                .foregroundStyle(system.wallpaper.secondaryForeground)
 
             HomeIndicator(color: system.wallpaper.foreground) {
                 system.goHome()
             }
-            .padding(.top, 17)
-            .padding(.bottom, 8)
+            .padding(.top, 14)
+            .padding(.bottom, 26)
         }
     }
 
@@ -1577,16 +1143,16 @@ private struct AppSwitcher: View {
                 HStack {
                     MiniAppMark(app: app)
                     Text(app.name)
-                        .font(.system(size: 14, weight: .semibold, design: .default))
+                        .font(.subheadline.weight(.semibold))
                     Spacer()
                 }
 
                 AppPreviewCard(app: app)
             }
+            .foregroundStyle(Instrument.ink)
             .padding(12)
             .frame(width: cardWidth, height: 535)
-            .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 32, style: .continuous))
-            .shadow(color: .black.opacity(0.3), radius: 24, y: 14)
+            .instrumentPanel(cornerRadius: 24)
         }
         .buttonStyle(PressableButtonStyle(scale: 0.98))
         .offset(y: lift)
@@ -1638,7 +1204,7 @@ private struct AppSwitcher: View {
                         dragY = 0
                         close(draggedApp)
                     } else {
-                        withAnimation(.interactiveSpring(response: 0.34, dampingFraction: 0.8)) {
+                        withAnimation(Instrument.motion) {
                             dragY = 0
                         }
                     }
@@ -1665,7 +1231,7 @@ private struct AppSwitcher: View {
     }
 
     private func moveFocus(to target: Int) {
-        withAnimation(.interactiveSpring(response: 0.36, dampingFraction: 0.86)) {
+        withAnimation(Instrument.motion) {
             focusedIndex = min(max(target, 0), max(system.appHistory.count - 1, 0))
             dragX = 0
         }
@@ -1684,7 +1250,7 @@ private struct AppSwitcher: View {
         guard axis != nil else { return }
         axis = nil
         clearDidDragAfterRelease()
-        withAnimation(.interactiveSpring(response: 0.34, dampingFraction: 0.8)) {
+        withAnimation(Instrument.motion) {
             draggedApp = nil
             dragY = 0
             dragX = 0
@@ -1693,12 +1259,12 @@ private struct AppSwitcher: View {
 
     private func close(_ app: BuiltInApp) {
         HapticEngine.play(.light, enabled: system.hapticsEnabled)
-        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+        withAnimation(Instrument.motion) {
             _ = closingApps.insert(app)
         }
         Task {
             try? await Task.sleep(for: .milliseconds(220))
-            withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+            withAnimation(Instrument.motion) {
                 // Keep the focused card focused when one before it goes.
                 if let closedIndex = system.appHistory.firstIndex(of: app), closedIndex < focusedIndex {
                     focusedIndex -= 1
@@ -1719,42 +1285,25 @@ private struct AppPreviewCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(uiColor: .secondarySystemBackground),
-                            (app.palette.last ?? .gray).opacity(0.18)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            Instrument.ground
                 .frame(height: 160)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay {
-                    PremiumAppMark(app: app, size: 82)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .stroke(.white.opacity(0.18), lineWidth: 0.7)
+                    AppMark(app: app, size: 82)
                 }
 
             Text(app.name)
-                .font(.system(size: 27, weight: .bold, design: .default))
+                .font(.title2.weight(.semibold))
+                .tracking(-0.4)
 
             ForEach(0..<4, id: \.self) { index in
-                HStack(spacing: 11) {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(app.palette[index % app.palette.count].opacity(0.22))
-                        .frame(width: 38, height: 38)
-                    VStack(alignment: .leading, spacing: 5) {
-                        Capsule()
-                            .fill(Color.primary.opacity(0.18))
-                            .frame(width: CGFloat(110 + index * 17), height: 7)
-                        Capsule()
-                            .fill(Color.primary.opacity(0.09))
-                            .frame(width: CGFloat(78 + index * 9), height: 6)
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    InstrumentRule(color: Instrument.rule)
+                    Instrument.rule
+                        .frame(width: CGFloat(110 + index * 17), height: 7)
+                    Instrument.rule
+                        .opacity(0.6)
+                        .frame(width: CGFloat(78 + index * 9), height: 6)
                 }
             }
 
@@ -1768,7 +1317,7 @@ private struct MiniAppMark: View {
     let app: BuiltInApp
 
     var body: some View {
-        PremiumAppMark(app: app, size: 26)
+        AppMark(app: app, size: 26)
     }
 }
 
@@ -1777,11 +1326,9 @@ private struct ControlCenterOverlay: View {
 
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .background(.black.opacity(0.25))
+            Instrument.ground
                 .onTapGesture {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                    withAnimation(Instrument.motion) {
                         system.overlay = nil
                     }
                 }
@@ -1791,73 +1338,72 @@ private struct ControlCenterOverlay: View {
 
                 HStack {
                     Text("Control Center")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.title.weight(.semibold))
+                        .tracking(-0.5)
                     Spacer()
                     Button {
                         system.lock()
                     } label: {
-                        Image(systemName: "lock.fill")
-                            .frame(width: 42, height: 42)
-                            .liquidGlass(cornerRadius: 21, intensity: 0.92)
+                        Image(systemName: "lock")
+                            .frame(width: 44, height: 44)
+                            .instrumentPanel(cornerRadius: 12)
                     }
+                    .accessibilityLabel("Lock")
                 }
-                .padding(.horizontal, 19)
+                .padding(.horizontal, 20)
 
                 HStack(spacing: 12) {
                     VStack(spacing: 12) {
                         HStack(spacing: 12) {
-                            ControlToggle(symbol: "airplane", isOn: $system.airplaneMode, tint: .orange)
-                            ControlToggle(symbol: "antenna.radiowaves.left.and.right", isOn: .constant(true), tint: .green)
+                            ControlToggle(symbol: "airplane", isOn: $system.airplaneMode)
+                            ControlToggle(symbol: "antenna.radiowaves.left.and.right", isOn: .constant(true))
                         }
                         HStack(spacing: 12) {
-                            ControlToggle(symbol: "wifi", isOn: $system.wifiEnabled, tint: .blue)
-                            ControlToggle(symbol: "bolt.horizontal.fill", isOn: $system.bluetoothEnabled, tint: .blue)
+                            ControlToggle(symbol: "wifi", isOn: $system.wifiEnabled)
+                            ControlToggle(symbol: "bolt.horizontal", isOn: $system.bluetoothEnabled)
                         }
                     }
                     .padding(13)
-                    .liquidGlass(cornerRadius: 27, intensity: 0.9)
+                    .instrumentPanel()
 
                     VStack(spacing: 10) {
                         Image(systemName: "waveform")
-                            .font(.system(size: 23, weight: .semibold))
+                            .font(.system(size: 23))
                         Text("Quiet Hours")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(.footnote.weight(.semibold))
                         HStack(spacing: 16) {
                             Image(systemName: "backward.fill")
                             Image(systemName: "play.fill")
                             Image(systemName: "forward.fill")
                         }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.footnote)
                     }
                     .frame(maxWidth: .infinity, minHeight: 139)
-                    .liquidGlass(cornerRadius: 27, intensity: 0.9)
+                    .instrumentPanel()
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
 
                 HStack(spacing: 12) {
-                    VerticalSlider(value: $system.brightness, symbol: "sun.max.fill")
-                    VerticalSlider(value: $system.volume, symbol: "speaker.wave.2.fill")
+                    VerticalSlider(value: $system.brightness, symbol: "sun.max")
+                    VerticalSlider(value: $system.volume, symbol: "speaker.wave.2")
                     VStack(spacing: 12) {
-                        WideControl(title: "Focus", symbol: "moon.fill", isOn: $system.isFocusEnabled)
+                        WideControl(title: "Focus", symbol: "moon", isOn: $system.isFocusEnabled)
                         WideControl(title: "Screen", symbol: "rectangle.inset.filled")
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
 
-                HStack(spacing: 15) {
+                HStack(spacing: 12) {
                     SmallControl(symbol: "flashlight.on.fill")
                     SmallControl(symbol: "timer")
-                    SmallControl(symbol: "camera.fill") { system.open(.camera) }
+                    SmallControl(symbol: "camera") { system.open(.camera) }
                     SmallControl(symbol: "waveform") { system.open(.voiceMemos) }
                 }
-                .padding(.horizontal, 18)
+                .padding(.horizontal, 20)
 
                 Spacer()
-
-                HomeIndicator()
-                    .padding(.bottom, 9)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Instrument.ink)
         }
     }
 }
@@ -1865,21 +1411,26 @@ private struct ControlCenterOverlay: View {
 private struct ControlToggle: View {
     let symbol: String
     @Binding var isOn: Bool
-    let tint: Color
 
     var body: some View {
         Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+            withAnimation(Instrument.motion) {
                 isOn.toggle()
             }
         } label: {
+            // On is a solid block, like a selected day in Calendar.
             Image(systemName: symbol)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(isOn ? .white : .primary.opacity(0.66))
+                .font(.system(size: 18))
+                .foregroundStyle(isOn ? Instrument.surface : Instrument.ink)
                 .frame(width: 48, height: 48)
-                .background(isOn ? tint : Color.primary.opacity(0.08), in: Circle())
+                .background(isOn ? Instrument.ink : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Instrument.edge, lineWidth: Instrument.hairline)
+                }
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
@@ -1890,17 +1441,15 @@ private struct VerticalSlider: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                    .fill(.white.opacity(0.11))
+                Instrument.surface
 
-                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                    .fill(.white.opacity(0.92))
+                Instrument.ink
                     .frame(height: max(48, proxy.size.height * value))
 
                 Image(systemName: symbol)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(value > 0.3 ? .black : .white)
-                    .padding(.bottom, 17)
+                    .font(.system(size: 17))
+                    .foregroundStyle(Instrument.surface)
+                    .padding(.bottom, 15)
             }
             .contentShape(Rectangle())
             .gesture(
@@ -1911,7 +1460,11 @@ private struct VerticalSlider: View {
             )
         }
         .frame(width: 74, height: 178)
-        .liquidGlass(cornerRadius: 27, intensity: 0.88)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Instrument.edge, lineWidth: Instrument.hairline)
+        }
     }
 }
 
@@ -1927,21 +1480,27 @@ private struct WideControl: View {
     }
 
     var body: some View {
+        let on = isOn?.wrappedValue == true
         Button {
             isOn?.wrappedValue.toggle()
         } label: {
             HStack(spacing: 11) {
                 Image(systemName: symbol)
                 Text(title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.footnote.weight(.semibold))
                 Spacer()
             }
+            .foregroundStyle(on ? Instrument.surface : Instrument.ink)
             .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 81)
-            .background((isOn?.wrappedValue == true ? Color.indigo : .clear).opacity(0.78), in: RoundedRectangle(cornerRadius: 23, style: .continuous))
-            .liquidGlass(cornerRadius: 23, intensity: 0.82)
+            .frame(maxWidth: .infinity, minHeight: 83)
+            .background(on ? Instrument.ink : Instrument.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Instrument.edge, lineWidth: Instrument.hairline)
+            }
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 
@@ -1952,10 +1511,10 @@ private struct SmallControl: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 18))
                 .frame(maxWidth: .infinity)
                 .frame(height: 62)
-                .liquidGlass(cornerRadius: 23, intensity: 0.86)
+                .instrumentPanel()
         }
         .buttonStyle(PressableButtonStyle())
     }
@@ -1966,23 +1525,22 @@ private struct NotificationCenterOverlay: View {
 
     var body: some View {
         ZStack {
-            IndicaWallpaper(style: system.wallpaper)
-                .blur(radius: 14)
-                .overlay(.black.opacity(0.18))
+            Instrument.ground
                 .onTapGesture {
-                    withAnimation { system.overlay = nil }
+                    withAnimation(Instrument.motion) { system.overlay = nil }
                 }
 
             VStack(spacing: 0) {
-                SystemStatusBar(foreground: system.wallpaper.foreground)
+                SystemStatusBar()
 
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Notifications")
-                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                            .font(.title.weight(.semibold))
+                            .tracking(-0.5)
                         Text("\(system.notifications.count) recent")
-                            .font(.system(size: 13, weight: .semibold))
-                            .opacity(0.64)
+                            .font(Instrument.mono(.footnote))
+                            .foregroundStyle(Instrument.inkSecondary)
                     }
                     Spacer()
                     Button("Clear") {
@@ -1990,12 +1548,12 @@ private struct NotificationCenterOverlay: View {
                             system.notifications.removeAll()
                         }
                     }
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 9)
-                    .liquidGlass(cornerRadius: 17, intensity: 0.8)
+                    .instrumentPanel(cornerRadius: 12)
                 }
-                .padding(.horizontal, 17)
+                .padding(.horizontal, 20)
                 .padding(.top, 14)
 
                 ScrollView {
@@ -2012,15 +1570,16 @@ private struct NotificationCenterOverlay: View {
                                 }
                         }
                     }
-                    .padding(13)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 13)
                 }
 
-                HomeIndicator(color: system.wallpaper.foreground) {
-                    withAnimation { system.overlay = nil }
+                HomeIndicator {
+                    withAnimation(Instrument.motion) { system.overlay = nil }
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, 26)
             }
-            .foregroundStyle(system.wallpaper.foreground)
+            .foregroundStyle(Instrument.ink)
         }
     }
 }
@@ -2036,21 +1595,21 @@ private struct NotificationCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
                     Text(notification.title)
-                        .font(.system(size: 14, weight: .semibold, design: .default))
+                        .font(.subheadline.weight(.semibold))
                     Spacer()
                     Text(notification.date, style: .relative)
-                        .font(.system(size: 10, weight: .medium))
-                        .opacity(0.54)
+                        .font(Instrument.mono(.caption2))
+                        .foregroundStyle(Instrument.inkSecondary)
                 }
                 Text(notification.body)
-                    .font(.system(size: 13, weight: .regular, design: .default))
+                    .font(.footnote)
                     .lineLimit(compact ? 1 : 3)
-                    .opacity(0.82)
+                    .foregroundStyle(Instrument.inkSecondary)
             }
         }
+        .foregroundStyle(Instrument.ink)
         .padding(13)
-        .background(.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 21, style: .continuous))
-        .liquidGlass(cornerRadius: 21, intensity: 0.70)
+        .instrumentPanel(cornerRadius: 14)
     }
 }
 
@@ -2061,21 +1620,22 @@ private struct WallpaperPickerOverlay: View {
         ZStack(alignment: .bottom) {
             Color.black.opacity(0.34)
                 .onTapGesture {
-                    withAnimation { system.overlay = nil }
+                    withAnimation(Instrument.motion) { system.overlay = nil }
                 }
 
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Wallpapers")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.title.weight(.semibold))
+                            .tracking(-0.5)
                         Text("Changes apply to Lock and Home.")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+                            .foregroundStyle(Instrument.inkSecondary)
                     }
                     Spacer()
                     Button("Done") {
-                        withAnimation { system.overlay = nil }
+                        withAnimation(Instrument.motion) { system.overlay = nil }
                     }
                     .fontWeight(.bold)
                 }
@@ -2084,20 +1644,20 @@ private struct WallpaperPickerOverlay: View {
                     HStack(spacing: 14) {
                         ForEach(WallpaperStyle.allCases) { wallpaper in
                             Button {
-                                withAnimation(.spring(response: 0.44, dampingFraction: 0.86)) {
+                                withAnimation(Instrument.motion) {
                                     system.wallpaper = wallpaper
                                 }
                             } label: {
                                 VStack(spacing: 8) {
                                     IndicaWallpaper(style: wallpaper)
                                         .frame(width: 128, height: 218)
-                                        .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                                         .overlay {
-                                            RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                                .stroke(system.wallpaper == wallpaper ? system.accent : .white.opacity(0.22), lineWidth: system.wallpaper == wallpaper ? 4 : 1)
+                                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                                .stroke(system.wallpaper == wallpaper ? Instrument.signal : Instrument.edge, lineWidth: system.wallpaper == wallpaper ? 3 : Instrument.hairline)
                                         }
                                     Text(wallpaper.rawValue)
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                        .font(.caption)
                                 }
                             }
                             .buttonStyle(PressableButtonStyle(scale: 0.97))
@@ -2107,9 +1667,10 @@ private struct WallpaperPickerOverlay: View {
             }
             .padding(20)
             .padding(.bottom, 18)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 34, style: .continuous))
+            .background(Instrument.surface)
+            .overlay(alignment: .top) { InstrumentRule() }
         }
-        .foregroundStyle(.primary)
+        .foregroundStyle(Instrument.ink)
     }
 }
 
@@ -2119,52 +1680,50 @@ private struct LockCustomizationOverlay: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.5)
-                .onTapGesture { withAnimation { system.overlay = nil } }
+                .onTapGesture { withAnimation(Instrument.motion) { system.overlay = nil } }
 
             VStack(spacing: 18) {
                 HStack {
                     Text("Customize")
-                        .font(.system(size: 25, weight: .bold, design: .rounded))
+                        .font(.title2.weight(.semibold))
                     Spacer()
                     Button("Done") {
-                        withAnimation { system.overlay = nil }
+                        withAnimation(Instrument.motion) { system.overlay = nil }
                     }
                     .fontWeight(.bold)
                 }
 
                 IndicaWallpaper(style: system.wallpaper)
                     .overlay {
-                        VStack {
-                            Text("Friday, July 17")
-                                .font(.system(size: 11, weight: .semibold))
-                            Text("9:41")
-                                .font(.system(size: 52, weight: .medium, design: .rounded))
-                            HStack(spacing: 7) {
-                                LockWidget(symbol: "cloud.sun.fill", title: "72°", detail: "Weather")
-                                LockWidget(symbol: "calendar", title: "2:30", detail: "Next")
-                            }
-                            .padding(10)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(Date.now.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)).uppercased())
+                                .font(Instrument.mono(.caption2, weight: .medium))
+                            Text(Date.now.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)))
+                                .font(.system(size: 52, weight: system.lockClockStyle.weight, design: system.lockClockStyle.design))
+                            LedgerStrip(verticalPadding: 8)
+                                .padding(.top, 8)
                             Spacer()
                         }
-                        .padding(.top, 32)
+                        .padding(16)
+                        .padding(.top, 16)
                         .foregroundStyle(system.wallpaper.foreground)
                     }
                     .frame(height: 475)
-                    .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 34, style: .continuous)
-                            .stroke(.white.opacity(0.28))
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Instrument.edge, lineWidth: Instrument.hairline)
                     }
 
                 HStack(spacing: 12) {
                     Button {
-                        withAnimation { system.overlay = .wallpaper }
+                        withAnimation(Instrument.motion) { system.overlay = .wallpaper }
                     } label: {
                         Label("Wallpaper", systemImage: "photo.fill")
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
-                            .background(system.accent, in: Capsule())
-                            .foregroundStyle(.white)
+                            .background(Instrument.ink, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .foregroundStyle(Instrument.surface)
                     }
 
                     Button {
@@ -2173,24 +1732,28 @@ private struct LockCustomizationOverlay: View {
                     } label: {
                         Image(systemName: "shuffle")
                             .frame(width: 48, height: 48)
-                            .background(Color.primary.opacity(0.08), in: Circle())
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(Instrument.edge, lineWidth: Instrument.hairline)
+                            }
                     }
+                    .accessibilityLabel("Next wallpaper")
                 }
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.subheadline.weight(.semibold))
             }
             .padding(20)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+            .instrumentPanel(cornerRadius: 24)
             .padding(20)
         }
-        .foregroundStyle(.primary)
+        .foregroundStyle(Instrument.ink)
     }
 }
 
 struct HomeIndicator: View {
-    var color: Color = .white
+    var color: Color = Instrument.ink
     var action: (() -> Void)?
 
-    init(color: Color = .white, action: (() -> Void)? = nil) {
+    init(color: Color = Instrument.ink, action: (() -> Void)? = nil) {
         self.color = color
         self.action = action
     }
@@ -2199,9 +1762,8 @@ struct HomeIndicator: View {
         Button {
             action?()
         } label: {
-            Capsule()
-                .fill(color.opacity(0.88))
-                .frame(width: 134, height: 5)
+            color
+                .frame(width: 134, height: 3)
                 .frame(maxWidth: .infinity, minHeight: 16)
                 // A thin bar, but a comfortable target. Overlaps its neighbors' margins only.
                 .contentShape(Rectangle().inset(by: -14))
@@ -2211,7 +1773,7 @@ struct HomeIndicator: View {
 }
 
 struct PressableButtonStyle: ButtonStyle {
-    var scale: CGFloat = 0.92
+    var scale: CGFloat = 0.95
     /// A drag elsewhere took over this touch, so the control stops looking pressed.
     var cancelsPress = false
 
@@ -2219,154 +1781,7 @@ struct PressableButtonStyle: ButtonStyle {
         let isPressed = configuration.isPressed && !cancelsPress
         configuration.label
             .scaleEffect(isPressed ? scale : 1)
-            .brightness(isPressed ? 0.05 : 0)
-            .animation(.spring(response: 0.28, dampingFraction: 0.7), value: isPressed)
-    }
-}
-
-private struct LiquidGlassModifier: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
-    @EnvironmentObject private var system: IndicaSystem
-    let cornerRadius: CGFloat
-    let intensity: Double
-
-    private var resolvedIntensity: Double {
-        min(1.45, max(0.24, intensity * system.glassIntensity * 1.18))
-    }
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if system.reduceTransparency || systemReduceTransparency {
-            content
-                .background(
-                    Color(uiColor: .secondarySystemBackground).opacity(0.96),
-                    in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
-                }
-                .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
-        } else if #available(iOS 26.0, *) {
-            content
-                .glassEffect(
-                    .regular,
-                    in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                )
-                .overlay {
-                    GlassSpecularSheen(
-                        cornerRadius: cornerRadius,
-                        intensity: resolvedIntensity
-                    )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    .white.opacity(0.48 * resolvedIntensity),
-                                    .white.opacity(0.10),
-                                    Color(hex: 0xD9B99C).opacity(0.15 * resolvedIntensity),
-                                    .black.opacity(0.16)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.65
-                        )
-                }
-                .overlay(alignment: .top) {
-                    Capsule()
-                        .fill(.white.opacity(0.24 * resolvedIntensity))
-                        .frame(height: 1)
-                        .padding(.horizontal, cornerRadius * 0.88)
-                        .padding(.top, 1)
-                }
-                .shadow(color: system.accent.opacity(0.055 * resolvedIntensity), radius: 18, y: 4)
-                .shadow(color: .black.opacity(0.19 * resolvedIntensity), radius: 19, y: 9)
-        } else {
-            content
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .background(
-                    LinearGradient(
-                        colors: [
-                            .white.opacity(0.16 * resolvedIntensity),
-                            .white.opacity(0.035 * resolvedIntensity),
-                            system.accent.opacity(0.045 * resolvedIntensity),
-                            .black.opacity(0.06 * resolvedIntensity)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                )
-                .overlay {
-                    GlassSpecularSheen(
-                        cornerRadius: cornerRadius,
-                        intensity: resolvedIntensity
-                    )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    .white.opacity(0.54 * resolvedIntensity),
-                                    .white.opacity(0.12),
-                                    .black.opacity(0.08)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.8
-                        )
-                }
-                .overlay(alignment: .top) {
-                    Capsule()
-                        .fill(.white.opacity(0.22 * resolvedIntensity))
-                        .frame(height: 1)
-                        .padding(.horizontal, cornerRadius * 0.8)
-                        .padding(.top, 1)
-                }
-                .shadow(color: system.accent.opacity(0.05 * resolvedIntensity), radius: 16, y: 4)
-                .shadow(color: .black.opacity(0.16 * resolvedIntensity), radius: 16, y: 8)
-        }
-    }
-}
-
-private struct GlassSpecularSheen: View {
-    let cornerRadius: CGFloat
-    let intensity: Double
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(
-                LinearGradient(
-                    stops: [
-                        .init(color: .white.opacity(0.25 * intensity), location: 0),
-                        .init(color: .white.opacity(0.08 * intensity), location: 0.23),
-                        .init(color: .clear, location: 0.46),
-                        .init(color: .clear, location: 0.73),
-                        .init(color: .white.opacity(0.035 * intensity), location: 1)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(alignment: .topLeading) {
-                Ellipse()
-                    .fill(.white.opacity(0.15 * intensity))
-                    .frame(width: max(28, cornerRadius * 2.8), height: max(10, cornerRadius * 0.72))
-                    .blur(radius: max(5, cornerRadius * 0.38))
-                    .offset(x: -cornerRadius * 0.25, y: -cornerRadius * 0.38)
-            }
-            .blendMode(.screen)
-            .allowsHitTesting(false)
-    }
-}
-
-extension View {
-    func liquidGlass(cornerRadius: CGFloat = 24, intensity: Double = 1) -> some View {
-        modifier(LiquidGlassModifier(cornerRadius: cornerRadius, intensity: intensity))
+            .opacity(isPressed ? 0.8 : 1)
+            .animation(Instrument.press, value: isPressed)
     }
 }
