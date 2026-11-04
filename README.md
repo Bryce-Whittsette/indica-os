@@ -1,5 +1,7 @@
 # Swift UI
 
+[Read the wiki](https://github.com/Bryce-Whittsette/indica-os/wiki) for setup, app guides, connections, data storage, development, and troubleshooting.
+
 *Formerly Indica OS.* A native iPhone app that hosts a complete phone-interface environment: lock screen, launcher, search, app switching, notification and control panels, settings, and 49 embedded apps.
 
 Swift UI runs inside an ordinary iOS application. It does not replace the operating system. Some apps store your data locally, some connect to external services, and others are concept demos that use sample data. Concept demos are labeled **Concept demo · sample data** on screen, and [docs/audit/app-inventory.md](docs/audit/app-inventory.md) lists the status of every app.
