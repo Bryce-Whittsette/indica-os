@@ -64,6 +64,24 @@ Bugs found by testing during M3: a release after a partial swipe opened the app;
 
 New observation: the real iOS home indicator sometimes shows below the app's own bottom bar (seen in Reminders). That's already part of the P1 "custom home indicator" finding.
 
+### M3 review and continuous pager (unreleased, branch `swift-ui/shell-gestures`)
+
+Independent source review of `7a972d6..647d7bd` blocked on one defect and listed eight more.
+
+| Finding | Severity | Result |
+| --- | --- | --- |
+| Upward swipe on a switcher card's lower part also fired the shell's Home swipe | P1 | Fixed. Observed on the simulator: partial and full swipes stay in the switcher |
+| Pill and switcher state stuck after a system-cancelled touch | P2 | Fixed with `@GestureState` reset. Not exercised: needs a device |
+| Two quick flicks clobbered shared close state | P2 | Fixed with a set of closing cards. Source only: scripted touches are too slow |
+| Clearing a new note kept a blank "Untitled" | P2 | Fixed. Observed on the simulator |
+| Pill translation could jump when the pill resized | P2 (suspected) | Fixed by using global coordinates |
+| Closing an earlier card moved focus to another card | P3 | Fixed. Source only |
+| Reverting a sample note bumped its date and made it personal | P3 | Fixed. Source only |
+| Every keystroke re-encodes all notes | P3 (suspected) | Open, recorded in the changelog |
+| README and release checks not updated | P3 | Release checks updated; README updated with this milestone |
+
+The pager replaces `TabView`, which can't report a fractional page. Measured on the simulator during this work: a first version rebuilt every icon per frame and took 3.07 s and 18 frames to settle. Moving the offset into a `ViewModifier` brought it to 0.80 to 1.08 s and 7 to 9 frames. Stopping the wallpaper animation did not help (1.04 to 1.40 s), so it stays. A 3-second `sample` during a drag showed the main thread mostly waiting, with no icon `body` in the stacks, which points at the simulator's renderer. None of this establishes a device frame rate.
+
 ## Audit health score
 
 | # | Dimension | Score | Key finding |

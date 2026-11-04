@@ -34,8 +34,8 @@ v0.2.0 was built with Xcode 27.2 and exercised on iPhone 18 Pro and iPhone 17e s
 
 | Area | Behavior |
 | --- | --- |
-| Shell | Boot, lock, home pages, app switching, overlays, search, and navigation |
-| Local state | Notes, reminders, messages, journal entries, Canvas drawings, and appearance preferences stored on device; sample content is kept separate and can be removed without touching yours |
+| Shell | Boot, lock, home pages that follow your finger, Search pill page scrubbing, app switching with swipe-to-close, overlays, search, and navigation |
+| Local state | Notes (saved as you type), reminders, messages, journal entries, Canvas drawings, and appearance preferences stored on device; sample content is kept separate and can be removed without touching yours |
 | Search | Finds apps and notes from the Search pill or the page-two search row |
 | Device status | Network type and battery level from public iOS APIs; values iOS doesn't share are not shown |
 | Calendar | Real current month and today; events are sample data and are not saved yet |
