@@ -679,6 +679,16 @@ final class IndicaSystem: ObservableObject {
     @Published var brightness = 0.78
     @Published var volume = 0.46
     @Published var appHistory: [BuiltInApp] = []
+    /// Whether notification text can show right now. The Lock Screen counts as locked,
+    /// including for overlays opened over it.
+    var showsNotificationPreviews: Bool {
+        switch notificationPreviews {
+        case .always: true
+        case .unlocked: phase != .locked
+        case .never: false
+        }
+    }
+
     var notificationCountText: String {
         let count = notifications.count
         return count == 1 ? "1 sample" : "\(count) samples"
@@ -817,6 +827,7 @@ final class IndicaSystem: ObservableObject {
         appHistory = Array(appHistory.prefix(6))
         withAnimation(Instrument.motion) {
             overlay = nil
+            isEditingHome = false
             phase = .app(app)
         }
     }

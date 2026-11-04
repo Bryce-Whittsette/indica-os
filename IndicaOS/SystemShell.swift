@@ -4,13 +4,21 @@ import SwiftUI
 /// The real flashlight, on hardware that has one.
 @MainActor
 enum DeviceTorch {
-    static var isAvailable: Bool { AVCaptureDevice.default(for: .video)?.hasTorch == true }
+    /// Kept, since view bodies read this while they track a finger.
+    static let isAvailable = AVCaptureDevice.default(for: .video)?.hasTorch == true
 
-    static func toggle() {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
-        guard (try? device.lockForConfiguration()) != nil else { return }
+    static var isOn: Bool {
+        isAvailable && AVCaptureDevice.default(for: .video)?.torchMode == .on
+    }
+
+    /// Returns whether the flashlight is on afterward.
+    @discardableResult
+    static func toggle() -> Bool {
+        guard isAvailable, let device = AVCaptureDevice.default(for: .video) else { return false }
+        guard (try? device.lockForConfiguration()) != nil else { return device.torchMode == .on }
         device.torchMode = device.torchMode == .on ? .off : .on
         device.unlockForConfiguration()
+        return device.torchMode == .on
     }
 }
 
@@ -260,6 +268,7 @@ struct SystemStatusBar: View {
 private struct LockScreen: View {
     @EnvironmentObject private var system: IndicaSystem
     @State private var dragOffset: CGFloat = 0
+    @State private var torchOn = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -299,7 +308,7 @@ private struct LockScreen: View {
                     NotificationCard(
                         notification: notification,
                         compact: true,
-                        showsPreview: system.notificationPreviews == .always
+                        showsPreview: system.showsNotificationPreviews
                     )
                 }
             }
@@ -308,7 +317,9 @@ private struct LockScreen: View {
             Spacer(minLength: 22)
 
             HStack {
-                LockActionButton(symbol: "flashlight.on.fill", label: "Flashlight") { DeviceTorch.toggle() }
+                LockActionButton(symbol: "flashlight.on.fill", label: "Flashlight", isOn: torchOn) {
+                    torchOn = DeviceTorch.toggle()
+                }
                     .disabled(!DeviceTorch.isAvailable)
                     .opacity(DeviceTorch.isAvailable ? 1 : 0.4)
                 Spacer()
@@ -329,6 +340,7 @@ private struct LockScreen: View {
             .padding(.bottom, 34)
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .onAppear { torchOn = DeviceTorch.isOn }
         .offset(y: dragOffset)
         .gesture(
             DragGesture(minimumDistance: 10)
@@ -356,18 +368,24 @@ private struct LockScreen: View {
 private struct LockActionButton: View {
     let symbol: String
     let label: String
+    /// Nil for a button with no on or off state.
+    var isOn: Bool?
     let action: () -> Void
 
     var body: some View {
+        let on = isOn == true
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 18, weight: .regular))
-                .foregroundStyle(Instrument.ink)
+                .foregroundStyle(on ? Instrument.surface : Instrument.ink)
                 .frame(width: 48, height: 48)
-                .instrumentPanel(cornerRadius: 12)
+                .background(on ? Instrument.ink : Instrument.surface, in: shape)
+                .overlay { shape.strokeBorder(Instrument.edge, lineWidth: Instrument.hairline) }
         }
         .buttonStyle(PressableButtonStyle())
         .accessibilityLabel(label)
+        .accessibilityValue(isOn.map { $0 ? "On" : "Off" } ?? "")
     }
 }
 
@@ -424,7 +442,12 @@ private struct HomeScreen: View {
                                             app: app,
                                             isEditing: system.isEditingHome,
                                             size: metrics.iconSize,
-                                            cancelsPress: pager.isSwiping
+                                            cancelsPress: pager.isSwiping,
+                                            onRemove: {
+                                                // The release of a swipe isn't a tap here either.
+                                                guard !pager.suppressesTap else { return }
+                                                removeFromHome(app)
+                                            }
                                         ) {
                                             // The release of a swipe or long press isn't a tap.
                                             guard !system.isEditingHome, !pager.suppressesTap else { return }
@@ -485,6 +508,7 @@ private struct HomeScreen: View {
                             showsLabel: false,
                             isInDock: true
                         ) {
+                            guard !system.isEditingHome else { return }
                             system.open(app)
                         }
                     }
@@ -517,6 +541,13 @@ private struct HomeScreen: View {
         .sheet(isPresented: $isSearching) {
             AppSearchView()
                 .environmentObject(system)
+        }
+    }
+
+    private func removeFromHome(_ app: BuiltInApp) {
+        HapticEngine.play(.selection, enabled: system.hapticsEnabled)
+        withAnimation(Instrument.motion) {
+            _ = system.hiddenHomeApps.insert(app)
         }
     }
 
@@ -916,8 +947,20 @@ private struct AppIcon: View {
     var showsLabel = true
     var isInDock = false
     var cancelsPress = false
+    /// Nil for an icon that can't be removed, like one in the dock.
+    var onRemove: (() -> Void)?
     let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @State private var wiggle = false
+
+    private var reducesMotion: Bool { system.reduceMotion || systemReduceMotion }
+
+    private func startWiggle() {
+        guard !reducesMotion else { return }
+        withAnimation(.easeInOut(duration: 0.13).repeatForever(autoreverses: true)) {
+            wiggle = true
+        }
+    }
 
     var body: some View {
         Button(action: action) {
@@ -938,15 +981,15 @@ private struct AppIcon: View {
         }
         .buttonStyle(PressableButtonStyle(cancelsPress: cancelsPress))
         .accessibilityLabel(app.name)
+        .accessibilityActions {
+            if let onRemove {
+                Button("Remove from Home Screen", action: onRemove)
+            }
+        }
         // Outside the icon's button: a button inside another's label can't be relied on.
         .overlay(alignment: .top) {
-            if isEditing {
-                Button {
-                    HapticEngine.play(.selection, enabled: system.hapticsEnabled)
-                    withAnimation(Instrument.motion) {
-                        _ = system.hiddenHomeApps.insert(app)
-                    }
-                } label: {
+            if isEditing, let onRemove {
+                Button(action: onRemove) {
                     Image(systemName: "minus")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Instrument.surface)
@@ -960,12 +1003,12 @@ private struct AppIcon: View {
                 .accessibilityLabel("Remove \(app.name) from Home Screen")
             }
         }
-        .rotationEffect(.degrees(isEditing ? (wiggle ? 1.5 : -1.5) : 0))
+        .rotationEffect(.degrees(isEditing && !reducesMotion ? (wiggle ? 1.5 : -1.5) : 0))
+        // On appear as well: icons rebuilt during editing wouldn't see a change.
+        .onAppear { if isEditing { startWiggle() } }
         .onChange(of: isEditing) { _, newValue in
             if newValue {
-                withAnimation(.easeInOut(duration: 0.13).repeatForever(autoreverses: true)) {
-                    wiggle.toggle()
-                }
+                startWiggle()
             } else {
                 wiggle = false
             }
@@ -1350,6 +1393,7 @@ private struct MiniAppMark: View {
 
 private struct ControlCenterOverlay: View {
     @EnvironmentObject private var system: IndicaSystem
+    @State private var torchOn = false
 
     var body: some View {
         ZStack {
@@ -1422,7 +1466,9 @@ private struct ControlCenterOverlay: View {
                 .padding(.horizontal, 20)
 
                 HStack(spacing: 12) {
-                    SmallControl(title: "Flashlight", symbol: "flashlight.on.fill") { DeviceTorch.toggle() }
+                    SmallControl(title: "Flashlight", symbol: "flashlight.on.fill", isOn: torchOn) {
+                        torchOn = DeviceTorch.toggle()
+                    }
                         .disabled(!DeviceTorch.isAvailable)
                         .opacity(DeviceTorch.isAvailable ? 1 : 0.4)
                     SmallControl(title: "Clock", symbol: "timer") { system.open(.clock) }
@@ -1431,7 +1477,7 @@ private struct ControlCenterOverlay: View {
                 }
                 .padding(.horizontal, 20)
 
-                Text("The switches and sliders here are simulated. They don't change this iPhone's settings.")
+                Text("The switches, sliders and player here are simulated. They don't change this iPhone.")
                     .font(.footnote)
                     .foregroundStyle(Instrument.inkSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1445,6 +1491,9 @@ private struct ControlCenterOverlay: View {
                 .padding(.bottom, 26)
             }
             .foregroundStyle(Instrument.ink)
+            // A fixed layout with no scrolling, like Home.
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .onAppear { torchOn = DeviceTorch.isOn }
         }
     }
 }
@@ -1564,18 +1613,25 @@ private struct WideControl: View {
 private struct SmallControl: View {
     let title: String
     let symbol: String
+    /// Nil for a shortcut with no on or off state.
+    var isOn: Bool?
     var action: () -> Void = {}
 
     var body: some View {
+        let on = isOn == true
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 18))
+                .foregroundStyle(on ? Instrument.surface : Instrument.ink)
                 .frame(maxWidth: .infinity)
                 .frame(height: 62)
-                .instrumentPanel()
+                .background(on ? Instrument.ink : Instrument.surface, in: shape)
+                .overlay { shape.strokeBorder(Instrument.edge, lineWidth: Instrument.hairline) }
         }
         .buttonStyle(PressableButtonStyle())
         .accessibilityLabel(title)
+        .accessibilityValue(isOn.map { $0 ? "On" : "Off" } ?? "")
     }
 }
 
@@ -1624,7 +1680,7 @@ private struct NotificationCenterOverlay: View {
                         ForEach(system.notifications) { notification in
                             NotificationCard(
                                 notification: notification,
-                                showsPreview: system.notificationPreviews != .never
+                                showsPreview: system.showsNotificationPreviews
                             )
                                 .onTapGesture {
                                     system.open(notification.app)
@@ -1662,7 +1718,7 @@ private struct NotificationCard: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text(notification.title)
+                    Text(showsPreview ? notification.title : notification.app.name)
                         .font(.subheadline.weight(.semibold))
                     Spacer()
                     // In place of a time: a sample's time isn't real either.

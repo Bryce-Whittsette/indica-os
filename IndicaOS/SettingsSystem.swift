@@ -1,3 +1,4 @@
+import AudioToolbox
 import SwiftUI
 
 private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
@@ -138,7 +139,7 @@ struct IndicaSettingsApp: View {
                         }
                         settingsLinks(connectionRoutes)
                     } footer: {
-                        Text("Airplane Mode here is simulated. It doesn't change this iPhone's setting.")
+                        Text("Settings here change Swift UI only, never this iPhone. Airplane Mode and some others are simulated and don't change anything yet.")
                     }
                 }
 
@@ -464,10 +465,14 @@ private struct VPNSettingsView: View {
                 Toggle("Connect On Demand", isOn: $connectOnDemand)
             }
 
-            Section("Configuration") {
+            Section {
                 LabeledContent("Name", value: "Swift UI Private")
                 LabeledContent("Type", value: "WireGuard")
                 LabeledContent("Status", value: enabled ? "Connected" : "Not Connected")
+            } header: {
+                Text("Configuration")
+            } footer: {
+                Text("Simulated. No VPN is set up, and network traffic isn't changed.")
             }
         }
         .navigationTitle("VPN")
@@ -522,14 +527,18 @@ private struct NotificationHistorySettingsView: View {
     var body: some View {
         List {
             ForEach(system.notifications) { notification in
+                // This screen is reached unlocked, so only Never hides anything here.
+                let hidden = system.notificationPreviews == .never
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(notification.title)
+                    Text(hidden ? notification.app.name : notification.title)
                         .font(.headline)
-                    Text(notification.body)
+                    Text(hidden ? "Notification" : notification.body)
                         .font(.subheadline)
-                    Text(notification.app.name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if !hidden {
+                        Text(notification.app.name)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .onDelete { offsets in
@@ -599,7 +608,8 @@ private struct SoundsSettingsView: View {
             }
 
             Section {
-                Button("Play Test Sound") {}
+                // A standard system alert sound. It follows the ringer switch, as alerts do.
+                Button("Play Test Sound") { AudioServicesPlaySystemSound(1007) }
                     .disabled(!system.soundsEnabled)
             }
         }
@@ -955,7 +965,7 @@ private struct AccessibilitySettingsView: View {
 
     var body: some View {
         Form {
-            Section("Vision") {
+            Section {
                 Toggle("Bold Text", isOn: $system.boldText)
                 Toggle("Increase Contrast", isOn: $increaseContrast)
                 Toggle("Button Shapes", isOn: $buttonShapes)
@@ -963,6 +973,10 @@ private struct AccessibilitySettingsView: View {
                     Text("Text Size")
                     Slider(value: $system.textScale, in: 0.82...1.25)
                 }
+            } header: {
+                Text("Vision")
+            } footer: {
+                Text("Increase Contrast and Button Shapes aren't applied yet. The same settings in iOS still work.")
             }
 
             Section("Motion") {
@@ -991,9 +1005,13 @@ private struct PrivacySettingsView: View {
                 Toggle("Share Swift UI Analytics", isOn: $system.analyticsSharing)
             }
 
-            Section("Network Privacy") {
+            Section {
                 Toggle("Private Relay", isOn: $privateRelay)
                 Toggle("Lockdown Mode", isOn: $lockdownMode)
+            } header: {
+                Text("Network Privacy")
+            } footer: {
+                Text("Simulated. These don't change this iPhone's privacy or network settings.")
             }
 
             Section("App Privacy") {

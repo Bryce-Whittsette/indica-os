@@ -9,13 +9,17 @@ Simulator, iOS 27.2, Debug build, scripted touches:
 - [x] Home: hold to edit, minus removes an app, Done, the removal survives a relaunch, Add Back restores it. Search pill scrub lands on a page with the ruler.
 - [x] Switcher: a full swipe closes one card, with the new motion.
 - [x] Appearance: with no in-app setting, the app rendered dark after the simulator was set to dark. The simulator can take minutes to apply a change, so the switch itself wasn't timed.
+- [x] Reduce Motion: a released page had fully landed in the first frame captured after release. One frame, so this is weak evidence.
+- [x] Independent read-only review of this batch. No blockers. It found that a swipe starting on a minus could remove the app, fixed and re-run here.
 - [x] Calculator, Canvas, Weather, Reminders, Connections, Notes, Journal, Settings, Contacts and Browser read by eye after the fixes.
 - [x] iPhone 17e and iPhone 18 Pro Max: Home, Lock Screen and Control Center, in light.
 - [x] Tide, Bloom, Dusk and Graphite wallpapers on the Lock Screen, in dark.
 
 Still required:
 
-- [ ] The flashlight on a physical iPhone. The simulator has none, so only the dimmed state has been seen.
+- [ ] The flashlight on a physical iPhone, including its on state. The simulator has none, so only the dimmed state has been seen. An App Store upload may also want a camera usage string for it.
+- [ ] Play Test Sound, audibly.
+- [ ] A full pass for other simulated Settings rows. Settings' opening footer covers them in general, but only the ones named in the changelog carry their own note.
 - [ ] Calculator results after the layout change, beyond the 13 engine checks.
 - [ ] Timed multi-day events in the Calendar list. All-day ones were run; the bare-time fix was only read in source.
 

@@ -10,8 +10,9 @@
 - Springs in the shell no longer overshoot.
 - The Lock Screen shows your real next event, in place of a made-up event and step count.
 - The concept demo label has its own strip above the app bar.
-- Control Center says its switches and sliders are simulated, and so do Settings' Airplane Mode, Bluetooth, Focus and Brightness. The flashlight buttons use the real flashlight where there is one and are dimmed where there isn't. The timer shortcut opens Clock, "Screen" is now "Display" and opens Settings, and the cellular switch can't be tapped.
-- The Show Previews setting now works. "When Unlocked" hides the text on the Lock Screen, and "Never" hides it everywhere.
+- Control Center says its switches and sliders are simulated, and so do Settings' Airplane Mode, Bluetooth, Focus and Brightness. The flashlight buttons use the real flashlight where there is one, show when it's on, and are dimmed where there isn't. The timer shortcut opens Clock, "Screen" is now "Display" and opens Settings, and the cellular switch can't be tapped.
+- The Show Previews setting now works. "When Unlocked" shows only the app name and "Notification" while locked, including over the Lock Screen, and "Never" does so everywhere.
+- VPN, Private Relay and Lockdown Mode say they're simulated, and Accessibility says Increase Contrast and Button Shapes aren't applied yet. Play Test Sound plays a real system sound.
 - Connections matches Instrument: plain service tiles, no colored backgrounds, and solid ink main buttons.
 - Home's later pages are titled Connections and Utilities. Both said "App Library".
 - Sample notifications say SAMPLE in place of a made-up time, and the count says samples rather than recent. All of them are seeded: Swift UI doesn't read other apps' notifications.
@@ -40,7 +41,7 @@
 - Reminders has an empty state, ignores blank entries and adds on Return.
 - Delete and Disconnect buttons in rows are red again.
 - White text on the orange accent failed contrast in dark, so main buttons no longer use it.
-- Done on the Home Screen no longer covers the weather cell.
+- Done on the Home Screen no longer covers the weather cell. Dock icons don't open apps while editing, and icons no longer stay tilted after returning from an app.
 - Calendar days no longer wrap or run together at the largest text sizes.
 - Control Center has a bar that closes it, and every overlay closes with the VoiceOver escape gesture. It could only be closed by tapping the background, which VoiceOver can't reach.
 - VoiceOver labels and values for dock icons, Control Center toggles and the home bar. Brightness and Volume are adjustable. Calendar announces today.

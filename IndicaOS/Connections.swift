@@ -855,7 +855,7 @@ private struct ConnectionServiceRow: View {
 
             if store.isConnected(service) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Instrument.success)
             } else {
                 Text("Set Up")
                     .font(.caption.bold())
@@ -935,7 +935,7 @@ struct ServiceConnectionDetail: View {
             if let message {
                 Section {
                     Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Instrument.signalText)
                 }
             }
         }
@@ -1028,7 +1028,7 @@ private struct ConnectionStatusPill: View {
             systemImage: store.isConnected(service) ? "checkmark.circle.fill" : "circle.dashed"
         )
         .font(.caption.bold())
-        .foregroundStyle(store.isConnected(service) ? .green : .secondary)
+        .foregroundStyle(store.isConnected(service) ? Instrument.success : .secondary)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(Color.primary.opacity(0.06), in: Capsule())
@@ -1459,7 +1459,7 @@ struct AIAssistantApp: View {
             Spacer()
             Image(systemName: "lock.fill")
                 .font(.caption)
-                .foregroundStyle(.green)
+                .foregroundStyle(Instrument.success)
         }
         .padding(15)
         .instrumentPanel(cornerRadius: 24)
