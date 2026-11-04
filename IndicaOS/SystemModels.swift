@@ -189,7 +189,6 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
     case gmail
     case outlook
     case chatGPT
-    case claude
 
     var id: String { rawValue }
 
@@ -244,7 +243,6 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
         case .gmail: "Gmail"
         case .outlook: "Outlook"
         case .chatGPT: "ChatGPT"
-        case .claude: "Claude"
         }
     }
 
@@ -299,7 +297,6 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
         case .gmail: "envelope.badge.fill"
         case .outlook: "tray.full.fill"
         case .chatGPT: "sparkles"
-        case .claude: "sun.max.fill"
         }
     }
 
@@ -354,7 +351,6 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
         case .gmail: [Color(hex: 0xEA5A52), Color(hex: 0xC83238)]
         case .outlook: [Color(hex: 0x4B9BFF), Color(hex: 0x1758B8)]
         case .chatGPT: [Color(hex: 0x5AC7AF), Color(hex: 0x177966)]
-        case .claude: [Color(hex: 0xE8A979), Color(hex: 0xA65C38)]
         }
     }
 
@@ -364,7 +360,7 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .notes, .reminders, .calculator, .tips, .journal, .canvas, .settings, .accounts,
              .calendar, .clock, .files, .voiceMemos,
-             .chatGPT, .claude, .spotify, .youtube, .gmail, .outlook, .notion, .discord, .telegram:
+             .chatGPT, .spotify, .youtube, .gmail, .outlook, .notion, .discord, .telegram:
             false
         default:
             true
@@ -377,7 +373,7 @@ enum BuiltInApp: String, CaseIterable, Identifiable, Codable {
             .communication
         case .camera, .photos, .music, .video, .podcasts, .books, .news, .voiceMemos, .spotify, .youtube:
             .media
-        case .calendar, .clock, .notes, .reminders, .files, .calculator, .translate, .shortcuts, .canvas, .journal, .notion, .chatGPT, .claude:
+        case .calendar, .clock, .notes, .reminders, .files, .calculator, .translate, .shortcuts, .canvas, .journal, .notion, .chatGPT:
             .productivity
         case .maps, .weather, .find, .compass, .measure, .magnifier:
             .utilities
@@ -692,7 +688,7 @@ final class IndicaSystem: ObservableObject {
         [.browser, .contacts, .files, .calculator, .podcasts, .news, .books, .voiceMemos,
          .translate, .shortcuts, .video, .videoCall, .fitness, .journal, .passwords, .stocks],
         [.accounts, .spotify, .youtube, .gmail, .outlook, .notion, .discord, .telegram,
-         .chatGPT, .claude],
+         .chatGPT],
         [.compass, .measure, .magnifier, .tips, .canvas, .watch]
     ]
 

@@ -13,7 +13,7 @@ The starting point for the overhaul (master brief §5), recorded before any app 
 
 Detail files:
 
-- [app-inventory.md](app-inventory.md): all 50 catalog entries with classification, behavior, data, permissions, defects, proposed release behavior and a completion check. Also covers the device-facts truth table, brand strings to migrate, and compatibility contracts.
+- [app-inventory.md](app-inventory.md): retained catalog entries with baseline classification, behavior, data, permissions, defects, proposed release behavior and a completion check. Also covers the device-facts truth table, brand strings to migrate, and compatibility contracts. The current catalog has 49 entries.
 - [shell.md](shell.md): the shell measured against brief §8, §12 and §20–23, including a gesture ownership map and a microinteraction inventory.
 
 Evidence labels used here: **observed** (seen in the running simulator build), **source** (confirmed by reading code, with `file:line` in the detail files), **unverified** (needs runtime or hardware confirmation).
@@ -43,7 +43,7 @@ Independent review (read-only, source only) of the release candidate found no P0
 | Finding | Status | Evidence |
 |---|---|---|
 | Fabricated status glyphs and Settings battery facts (P1) | Fixed: `DeviceStatus` (NWPathMonitor and UIDevice). Values iOS doesn't provide are omitted. | Status bar shows Wi-Fi only on the simulator, which reports no battery level. The cellular bars are gone. |
-| Search does nothing (P1) | Fixed: a search sheet for apps and notes | Searching "aud" found the Claude app and the user note. Tapping the note opened Notes. |
+| Search does nothing (P1) | Fixed: a search sheet for apps and notes | App and note search results were exercised. Tapping a note result opened Notes. |
 | Sample data presented as real (P1) | Labeled: "Concept demo · sample data" in 33 apps at v0.2.0, 29 now. The baseline's 36 demos included Journal and Canvas, which now work, and Settings, which is partly real and not labeled. | Seen in Weather and Calendar. |
 | Calendar fixed to July 2026 (P1) | Fixed: real month and today, with month navigation | Captured November 2026 with Tuesday the 3rd as today. |
 | Mail "Send", Phone keypad call, Gmail → YouTube (P1) | Fixed: `mailto:`, `tel:` and per-app handoffs | Source only. Handoffs need a physical device. |
@@ -104,7 +104,7 @@ Calendar, Clock, Files and Voice Memos moved from concept demo to operational lo
 ## Executive summary
 
 - Health score **8/20 (Poor)**.
-- Catalog: **4 operational** (Notes, Reminders, Calculator, Tips), **4 with real provider code that has never run against a live account** (Connections hub, ChatGPT/Claude via your own API key, Spotify), **6 external handoffs** (YouTube, Gmail, Outlook, Notion, Discord, Telegram), **36 concept demos**.
+- Retained baseline catalog: **4 operational** (Notes, Reminders, Calculator, Tips), **3 with real provider code that has never run against a live account** (Connections hub, ChatGPT via your own API key, Spotify), **6 external handoffs** (YouTube, Gmail, Outlook, Notion, Discord, Telegram), **36 concept demos**. Subsequent releases changed classifications; see the changelog for current behavior.
 - Defects in app entries: **4 P0, 128 P1, 110 P2, 39 P3**. The shell adds 2 P0 and 8 P1 headline findings.
 - What blocks a release:
   1. **Personal data is wiped under a "demo" label.** Settings → Transfer or Reset → "Erase Local Demo Content" replaces all notes, reminders and messages with welcome stubs. Its footer says it resets "only Indica's local sample content" (source, `SystemModels.swift:755`, `SettingsSystem.swift:1316`).

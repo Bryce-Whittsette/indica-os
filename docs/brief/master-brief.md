@@ -63,7 +63,7 @@ Work in reviewable stages. Share brief updates explaining what you found, what c
 
 Before redesigning, inspect the working tree, build configuration, dependencies, persistence, state management, permissions, navigation, credentials, and current CI. Build and launch the application. Capture the existing shell and representative apps on current simulators.
 
-Create an inventory covering every catalog entry and system surface. The inspected catalog contains 50 entries; reconcile that count against current source. For each record include: purpose, entry point, primary task, current behavior, defects, data source, supported actions, permissions, cost, proposed release behavior, and verification status.
+Create an inventory covering every catalog entry and system surface. The current catalog contains 49 entries; reconcile that count against current source. For each record include: purpose, entry point, primary task, current behavior, defects, data source, supported actions, permissions, cost, proposed release behavior, and verification status.
 
 Classify each entry accurately as operational local/native functionality, verified provider integration, explicit external handoff, or concept demonstration. Record an owner-readable completion check for each. A screen that compiles, an icon that opens, or an API setting that saves is insufficient proof of functionality.
 
@@ -154,7 +154,7 @@ Reconcile this table with the actual catalog. It defines expected release behavi
 | Home, Find, Watch | Verify the exact supported device/accessory capabilities and entitlements. Unsupported system experiences remain explicit concepts, not claims of device control or tracking. |
 | Wallet, Passwords | Keep demonstration assets unmistakable. Do not solicit real payment details or secrets through simulated storage or authentication. A genuine vault/payment capability requires a separately defined, verified implementation. |
 | Notion, Discord, Telegram | Use a supported integration or an explicit official-app/web handoff. Verify scopes and actions before claiming account access or history synchronization. |
-| ChatGPT, Claude | Provide useful optional entry points. Separate official-app access from developer API functionality and billing. Core use never depends on paid AI or access to a consumer chat subscription. |
+| ChatGPT | Provide a useful optional entry point. Separate official-app access from developer API functionality and billing. Core use never depends on paid AI or access to a consumer chat subscription. |
 
 If an app cannot meet operational criteria within this release, state what it genuinely provides, give the best supported alternative, and place only the experimental portion in the concept lab. Keep personal and demonstration content clearly separated.
 
@@ -254,7 +254,7 @@ In your first response, summarize the decisions already settled, verify the repo
 
 ## 19. Installed skills and slash-command usage
 
-Read the installed skill instructions before applying their workflows. The confirmed local skills are Apple Design at /Users/brycewhittsette/.claude/skills/apple-design/SKILL.md and Impeccable at /Users/brycewhittsette/.claude/skills/impeccable/SKILL.md. Impeccable includes native iOS references.
+Read the installed skill instructions before applying their workflows. Optional design tools include Apple Design and Impeccable; locate their instructions in the current environment. Impeccable includes native iOS references.
 
 Use `/impeccable init` to establish durable product context, `/impeccable critique` for experience/design findings, `/impeccable audit` with its native guidance for quality checks, `/impeccable shape` when a discrete brief needs resolution, and scoped animation, hardening, optimization, and polish workflows at the appropriate milestones.
 
@@ -334,4 +334,4 @@ Use checkpoint reviews after shared shell/gesture changes, the brand migration, 
 
 Avoid endless review loops. If the same finding survives repeated attempts, isolate the cause, gather targeted evidence, and revise the approach. Stop only the dependent feature when an external capability or required physical-device check is unavailable, and state what remains unverified. An “agent reviewed it” statement alone is not a quality result.
 
-Claude Code supports custom project subagents; configure a project reviewer using the current documented mechanism and version. The /agents command's interface varies by Claude Code version, so ask Claude to create the reviewer definition if necessary. See [Claude Code subagents](https://code.claude.com/docs/en/sub-agents). Suggested delegation: “Use the Swift UI reviewer to assess this milestone against Sections 20–24. Review the current build evidence and diff, report reproducible findings, and make no source edits.”
+Configure an independent project reviewer using the review tools available in the current environment. Suggested review brief: “Assess this milestone against Sections 20–24. Review the current build evidence and diff, report reproducible findings, and make no source edits.”

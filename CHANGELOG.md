@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Removed
+- Removed the secondary assistant app, its provider API client, connection settings, model preference, and outbound links. The catalog now contains 49 apps; the OpenAI assistant and other services remain available.
+- Removed tool-specific project branding and external tooling links. Development instructions now live in `DEVELOPMENT.md`.
+
 ## v0.3.0 — 2026-11-03
 
 The Home Screen now follows your finger, the app is named Swift UI, and Calendar, Clock, Files and Voice Memos work for real. The Instrument visual design is selected but not built, so the look is unchanged.

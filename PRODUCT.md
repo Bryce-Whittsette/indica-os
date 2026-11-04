@@ -16,7 +16,7 @@ ios
 
 ## Product Purpose
 
-Swift UI is a native iPhone app that hosts a complete phone-interface environment: lock concept, launcher, dock, app switching, notification and control panels, search, settings, and 50 embedded apps. It should be useful at minimal cost and demonstrate that the owner can design a coherent system and build dependable software.
+Swift UI is a native iPhone app that hosts a complete phone-interface environment: lock concept, launcher, dock, app switching, notification and control panels, search, settings, and 49 embedded apps. It should be useful at minimal cost and demonstrate that the owner can design a coherent system and build dependable software.
 
 Success: agreed functional scenarios pass, every catalog entry carries an accurate status, public branding is consistent, persistence and migration hold, accessibility and recovery states are verified, CI passes, documentation matches behavior, and a versioned GitHub release ships from the verified commit.
 
