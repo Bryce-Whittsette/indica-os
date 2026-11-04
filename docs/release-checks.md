@@ -1,5 +1,32 @@
 # Release checks
 
+## Unreleased: Instrument
+
+Source-level, also in CI:
+
+- [x] Calculator, pager physics and local logic checks pass.
+- [x] Token contrast passes in both appearances: 4.5:1 for text, 3:1 for marks and outlines (`Tests/InstrumentTokenTests.swift`).
+
+Simulator, iOS 27.2, Debug build. Screenshots read by eye, with scripted touches where noted:
+
+- [x] iPhone 18 Pro, light and dark: Home, Lock Screen, Calendar, Control Center. Notifications and the switcher in light only.
+- [x] iPhone 17e, light: Home, Lock Screen, Calendar, Control Center.
+- [x] iPhone 17e at the largest non-accessibility and largest accessibility text sizes: Home and Lock Screen hold their layout at their cap, and Calendar days stay on one line, without overlap.
+- [x] All four Home pages' icons drawn from the SVG masters, including monograms. The ruler's signal tick moves as pages settle.
+- [x] Icon appearances: Light, Dark, Clear and Tinted on Home, and their Settings previews. Compact density. Aura and Daylight wallpapers on Home, Aura on the Lock Screen.
+- [x] Scripted touches: page swipe, opening a dock app, Search opening from a tap on the pill, swipe up to unlock, the app bar's Recents button, leaving the switcher.
+- [x] Scripted touches: a pull from y=30 opens Notifications on the left and Control Center on the right. Before the fix, gesture logging showed touches above the safe area never reached the shell's gesture. It's from a fresh launch each time, since a quick second swipe goes to iOS by design.
+
+Still required:
+
+- [ ] Everything on a physical iPhone: how it looks and feels, hairline weight, and the pull from the status bar with real edge deferral.
+- [ ] Appearance set to Automatic following the system in the simulator. `simctl ui appearance` didn't change the app or iOS's own Settings here, so dark was checked with the in-app Dark setting.
+- [ ] Search pill scrub re-run with the ruler. The gesture code is unchanged, and only the ticks were seen moving during a settle.
+- [ ] Press, wiggle and switcher card-close re-run with the new motion. The closing spring changed; the gesture code didn't.
+- [ ] iPhone 18 Pro Max and the iOS 17 runtime, including SVG template rendering there.
+- [ ] VoiceOver walkthrough of the ledger, ruler, dock and Calendar. Reduce Motion across the shell.
+- [ ] Remaining gradient wallpapers (Tide, Bloom, Dusk, Graphite) on the Lock Screen and in the overlays.
+
 ## v0.3.0 (2026-11-03)
 
 Simulator, iPhone 18 Pro, iOS 27.2, scripted touches, Debug build:

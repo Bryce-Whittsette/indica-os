@@ -21,9 +21,16 @@ struct SystemShell: View {
                 }
             }
             .environment(\.shellSafeAreaInsets, proxy.safeAreaInsets)
-            .ignoresSafeArea()
+            // Before ignoresSafeArea, so the touch area and the gesture's coordinates
+            // are the whole screen. After it, the status bar region gets no touches.
             .contentShape(Rectangle())
-            .simultaneousGesture(systemGesture(in: proxy.size))
+            .simultaneousGesture(
+                systemGesture(screenSize: CGSize(
+                    width: proxy.size.width,
+                    height: proxy.size.height + proxy.safeAreaInsets.top + proxy.safeAreaInsets.bottom
+                ))
+            )
+            .ignoresSafeArea()
             .onAppear {
                 guard !didStart else { return }
                 didStart = true
@@ -75,7 +82,7 @@ struct SystemShell: View {
         }
     }
 
-    private func systemGesture(in size: CGSize) -> some Gesture {
+    private func systemGesture(screenSize size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 24)
             .onEnded { value in
                 let startedAtTop = value.startLocation.y < 82
@@ -864,6 +871,8 @@ private struct AppSearchView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+            // A list of apps isn't "current" or urgent, so it doesn't get the signal color.
+            .tint(Instrument.ink)
         }
     }
 
@@ -966,20 +975,20 @@ private struct AppHost: View {
                     .safeAreaInset(edge: .top, spacing: 0) {
                         SystemStatusBar(foreground: .primary)
                     }
-                    // Below the content, so it never collides with navigation bar controls.
-                    .safeAreaInset(edge: .bottom, spacing: 0) {
-                        if app.isConceptDemo {
-                            Text("CONCEPT DEMO · SAMPLE DATA")
-                                .font(Instrument.mono(.caption2))
-                                .foregroundStyle(Instrument.inkSecondary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Instrument.surface, in: Capsule())
-                                .overlay { Capsule().stroke(Instrument.rule, lineWidth: Instrument.hairline) }
-                                .padding(.vertical, 4)
-                                .accessibilityLabel("Concept demo. This app shows sample data and simulated results.")
-                        }
-                    }
+
+                // Its own strip, not an inset: apps with a composer at the bottom ignore
+                // insets, and the label covered their controls.
+                if app.isConceptDemo {
+                    Text("CONCEPT DEMO · SAMPLE DATA")
+                        .font(Instrument.mono(.caption2))
+                        .foregroundStyle(Instrument.inkSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity, minHeight: 24)
+                        .background(Instrument.surface)
+                        .overlay(alignment: .top) { InstrumentRule(color: Instrument.rule) }
+                        .accessibilityLabel("Concept demo. This app shows sample data and simulated results.")
+                }
 
                 HybridAppNavigationBar()
             }

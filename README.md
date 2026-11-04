@@ -6,7 +6,7 @@
 
 Swift UI runs inside an ordinary iOS application. It does not replace the operating system. Some apps store your data locally, some connect to external services, and others are concept demos that use sample data. Concept demos are labeled **Concept demo · sample data** on screen, and [docs/audit/app-inventory.md](docs/audit/app-inventory.md) lists the status of every app.
 
-The visual redesign has not started yet, so the current look is the earlier prototype's, including the old boot mark. The app's name and copy now say Swift UI; the project, bundle ID and callback keep their `IndicaOS` names for compatibility. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+The shell uses the selected Instrument design (`DESIGN.md`), checked on the simulator. The logo isn't designed yet, so the boot mark and app icon are still the earlier prototype's, and the screenshots below are from v0.2.0. The app's name and copy now say Swift UI; the project, bundle ID and callback keep their `IndicaOS` names for compatibility. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 <p>
   <img src="docs/images/v0.2.0/lock.png" alt="Lock screen with the time, three widgets and two notifications, beside the real camera cutout" width="200" />
@@ -19,7 +19,7 @@ The visual redesign has not started yet, so the current look is the earlier prot
 
 ## Run
 
-Requires Xcode 26 or newer with an iOS SDK. The deployment target is iOS 17; native glass effects use an availability-guarded iOS 26 path, with a material fallback on earlier runtimes.
+Requires Xcode 26 or newer with an iOS SDK. The deployment target is iOS 17.
 
 1. Open `IndicaOS.xcodeproj`.
 2. Select the shared `IndicaOS` scheme and an iPhone simulator.

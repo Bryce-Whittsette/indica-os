@@ -2,12 +2,32 @@
 
 ## Unreleased
 
+### Changed
+- **The Instrument design is built.** The shell has a new look: matte surfaces, ruled lines and one signal color, in light and dark. Home has a ruled ledger with your next event and the labeled sample weather, a Search pill with a ruler that tracks the page, and solid dock tiles. The Lock Screen, app switcher, Control Center, Notifications and app bar match. Calendar is a ruled grid.
+- 41 apps have new original line icons, and Calendar and Clock icons show the real date and time. Third-party services show a plain letter instead of an imitated logo.
+- Numerals and small labels use the system monospaced face, standing in for IBM Plex Mono, which isn't bundled.
+- The Instrument wallpaper and Signal accent are the defaults. If you already picked a wallpaper or accent, it stays, and the earlier ones are still in Settings.
+- Springs in the shell no longer overshoot.
+- The Lock Screen shows your real next event, in place of a made-up event and step count.
+- The concept demo label has its own strip above the app bar.
+
 ### Added
 - Published a GitHub wiki with setup instructions, app and navigation guides, connection setup, storage and privacy details, a development guide, and troubleshooting.
 
 ### Removed
 - Removed the secondary assistant app, its provider API client, connection settings, model preference, and outbound links. The catalog now contains 49 apps; the OpenAI assistant and other services remain available.
+- Removed Liquid Glass and its Intensity slider from Settings, because nothing is glass now. "Glass, Color & Motion" is now "Color & Motion".
+- Removed the in-app Reduce Transparency switches, because nothing depends on them now. Weather's material still follows the iOS setting.
+- Removed the "Swipe up for Home" hint in apps. It disappeared after a few seconds and resized the screen when it did.
+- Removed the shell's own bar from Home, the Lock Screen and Control Center, where it did nothing and doubled up with the iOS home bar.
 - Removed tool-specific project branding and external tooling links. Development instructions now live in `DEVELOPMENT.md`.
+
+### Fixed
+- Pulling down from the status bar now opens Notifications or Control Center. The top of the screen ignored touches, so the pull only worked from just below it.
+- The concept demo label no longer covers the Messages composer.
+- The Apps row in Settings has its icon back.
+- Calendar days no longer wrap or run together at the largest text sizes.
+- Dock icons have VoiceOver labels.
 
 ## v0.3.0 — 2026-11-03
 

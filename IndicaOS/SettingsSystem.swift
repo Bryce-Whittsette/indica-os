@@ -75,7 +75,7 @@ private enum SettingsRoute: String, CaseIterable, Hashable, Identifiable {
         case .privacy: "hand.raised.fill"
         case .battery: "battery.100percent"
         case .general: "gear"
-        case .apps: "app.grid.3x3"
+        case .apps: "square.grid.3x3.fill"
         case .developer: "wrench.and.screwdriver.fill"
         }
     }
