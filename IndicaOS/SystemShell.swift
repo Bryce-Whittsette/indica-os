@@ -927,8 +927,8 @@ private struct AppIcon: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .foregroundStyle(system.wallpaper.foreground)
-                        // The gradient wallpapers vary under the label. Instrument's ground doesn't.
-                        .shadow(color: system.wallpaper == .instrument ? .clear : .black.opacity(0.5), radius: 3, y: 1)
+                        // White labels need help where a gradient wallpaper turns light.
+                        .shadow(color: system.wallpaper.hasWhiteForeground ? .black.opacity(0.5) : .clear, radius: 3, y: 1)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -1360,7 +1360,7 @@ private struct ControlCenterOverlay: View {
                         }
                         HStack(spacing: 12) {
                             ControlToggle(symbol: "wifi", isOn: $system.wifiEnabled)
-                            ControlToggle(symbol: "bolt.horizontal", isOn: $system.bluetoothEnabled)
+                            ControlToggle(symbol: "bolt.horizontal.fill", isOn: $system.bluetoothEnabled)
                         }
                     }
                     .padding(13)

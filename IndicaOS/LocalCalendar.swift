@@ -55,6 +55,8 @@ struct CalendarApp: View {
                             Text(day)
                                 .font(Instrument.mono(.caption2))
                                 .foregroundStyle(Instrument.inkSecondary)
+                                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                                .lineLimit(1)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 8)
                         }
@@ -70,7 +72,7 @@ struct CalendarApp: View {
                                     InstrumentRule(color: Instrument.rule)
                                     Spacer(minLength: 0)
                                 }
-                                .frame(minHeight: dayCellHeight)
+                                .frame(minHeight: min(dayCellHeight, 72))
                                 .accessibilityHidden(true)
                             }
                         }
@@ -155,12 +157,16 @@ struct CalendarApp: View {
                 Text("\(calendar.component(.day, from: date))")
                     .font(Instrument.mono(.subheadline, weight: isToday ? .semibold : .regular))
                     .foregroundStyle(isSelected ? Instrument.surface : (isToday ? Instrument.signalText : Instrument.ink))
+                    // Seven columns can't hold larger two-digit days without running together.
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 // A short mark under a day with events.
                 (isSelected ? Instrument.surface : Instrument.ink)
                     .frame(width: 10, height: 2)
                     .opacity(hasEvent ? 1 : 0)
             }
-            .frame(maxWidth: .infinity, minHeight: dayCellHeight)
+            .frame(maxWidth: .infinity, minHeight: min(dayCellHeight, 72))
             .background(isSelected ? Instrument.ink : .clear)
             // The selected day is a solid block with a signal underline.
             .overlay(alignment: .bottom) {

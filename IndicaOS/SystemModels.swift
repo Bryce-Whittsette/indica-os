@@ -158,6 +158,8 @@ enum WallpaperStyle: String, CaseIterable, Identifiable {
         }
     }
 
+    var hasWhiteForeground: Bool { self != .instrument && self != .daylight }
+
     var secondaryForeground: Color {
         self == .instrument ? Instrument.inkSecondary : foreground.opacity(0.76)
     }
